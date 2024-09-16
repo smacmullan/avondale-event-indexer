@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Avondale Gardening Alliance",
+        "eventApiType": "googleCalendar",
+        "api": "0130a6e9ed7e9a08143a4105243a6e93f1f738a8a17d6c90a7af0f5d7bb24d2d@group.calendar.google.com"
+    },
+    {
+        "name": "Reed's Local",
+        "eventApiType": "googleCalendar",
+        "api": "reedslocaltap@gmail.com"
+    }
+]
