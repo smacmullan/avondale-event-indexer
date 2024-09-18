@@ -13,5 +13,15 @@
         "name": "Consignment Lounge",
         "eventApiType": "googleCalendar",
         "api": "9126428df9b2d09369486b0edc22fefda299ed3f2f45b4da777557902c662f3d@group.calendar.google.com"
+    },
+    {
+        "name": "Sleeping Village",
+        "eventApiType": "plot",
+        "api": "sleeping-village.com"
+    },
+    {
+        "name": "Insect Asylum",
+        "eventApiType": "eventCalendars.co",
+        "api": "https://plugin.eventscalendar.co/api/eventbrite/events?user=user_deg5cbAfk1s2z6e6Nqm7J&project=proj_kzcnLsblbDS6HB8f1RPe9&calendar=43421436193&from=1725166800000&to=1728795600000&options=undefined"
     }
 ]
