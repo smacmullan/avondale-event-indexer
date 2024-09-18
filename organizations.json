@@ -8,5 +8,10 @@
         "name": "Reed's Local",
         "eventApiType": "googleCalendar",
         "api": "reedslocaltap@gmail.com"
+    },
+    {
+        "name": "Consignment Lounge",
+        "eventApiType": "googleCalendar",
+        "api": "9126428df9b2d09369486b0edc22fefda299ed3f2f45b4da777557902c662f3d@group.calendar.google.com"
     }
 ]

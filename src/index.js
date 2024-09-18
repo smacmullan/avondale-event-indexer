@@ -1,18 +1,20 @@
 import { google } from 'googleapis';
 import fs from 'fs'; // Change require to import
 import dotenv from 'dotenv'; // Change require to import
-import { formatTimeRange, formatDay } from './utils/timeFormat.js';
+import { formatTimeRange, formatDay, getEndOfWeek } from './utils/time.js';
 dotenv.config();
 
 
 async function fetchCalendarEvents(calendarId) {
     try {
         const calendar = google.calendar({ version: 'v3', auth: process.env.GOOGLE_API_KEY });
+        const endDate = getEndOfWeek(2);
 
         // Fetch events from the calendar
         const response = await calendar.events.list({
             calendarId: calendarId,
             timeMin: (new Date()).toISOString(), // Start time (current date/time)
+            timeMax: endDate.toISOString(),
             maxResults: 20,
             singleEvents: true,
             orderBy: 'startTime',
@@ -21,7 +23,7 @@ async function fetchCalendarEvents(calendarId) {
         return events;
 
     } catch (error) {
-        console.error('Error fetching calendar events:', error);
+        console.error('Error fetching calendar events for ', calendarId);
         return [];
     }
 }
@@ -46,7 +48,7 @@ function printEventList(events, organizationsData) {
 
         // Format the event summary
         const timeRange = formatTimeRange(event);
-        console.log(`* ${timeRange} - ${event.summary} @ ${organizationName}`);
+        console.log(`* ${timeRange} - ${event.summary} | ${organizationName}`);
     });
 }
 

@@ -53,3 +53,25 @@ export function formatDay(event) {
 
     return new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'numeric', day: 'numeric' }).format(date);
 }
+
+
+export function getEndOfWeek(weeksOut = 0) {
+    // return a timestamp for the following Monday at noon
+
+    // Calculate the date n weeks from today
+    const today = new Date();
+    const futureDate = new Date();
+    // Add weeks
+    futureDate.setDate(today.getDate() + (weeksOut * 7)); 
+
+    // Move to the following Monday
+    const dayOfWeek = futureDate.getDay(); // Get the day of the week (0 is Sunday)
+    const daysUntilNextMonday = (8 - dayOfWeek) % 7; // Days until the next Monday (8 - dayOfWeek % 7)
+    const endDate = new Date(futureDate);
+    endDate.setDate(futureDate.getDate() + daysUntilNextMonday);
+
+    // Set the time to noon in the local timezone
+    endDate.setHours(12, 0, 0, 0); // Noon (12:00 PM)
+
+    return endDate;
+}
