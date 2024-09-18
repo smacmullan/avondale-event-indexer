@@ -8,21 +8,21 @@ function formatTime(date, hoursOnly=false) {
 
 export function formatTimeRange(event) {
 
-    if (!event.start.dateTime) {
+    if (!event.startDate || isISODate(event.startDate)) {
         // no start or end time provided
         return "All Day";
     }
 
-    const start = new Date(event.start.dateTime);
+    const start = new Date(event.startDate);
     const startHours = start.getHours();
     const startMinutes = start.getMinutes();
 
-    if (event.start.dateTime && !event.end.dateTime) {
+    if (event.startDate && !event.endDate) {
         // no end time provided
         return formatTime(start);
     }
 
-    const end = new Date(event.end.dateTime);
+    const end = new Date(event.endDate);
     const endHours = end.getHours();
 
     const isSameTime = start.getTime() === end.getTime();
@@ -44,17 +44,19 @@ export function formatTimeRange(event) {
 
 export function formatDay(event) {
     let date;
-    if (event.start.date) {
-        // Create a new Date object using the local timezone
-        let [year, month, day] = event.start.date.split('-');
-        let date = new Date(year, month - 1, day); // Month is 0-indexed
-    }
+    if (isISODate(event.startDate))
+        date = getDateFromISODate(event.startDate);
     else
-        date = new Date(event.start.dateTime);
+        date = new Date(event.startDate);
 
     return new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'numeric', day: 'numeric' }).format(date);
 }
 
+function getDateFromISODate(str){
+    // Create a new Date object using the local timezone
+    let [year, month, day] = str.split('-');
+    return new Date(year, month - 1, day); // Month is 0-indexed
+}
 
 export function getEndOfWeek(weeksOut = 0) {
     // return a timestamp for the following Monday at noon
@@ -75,4 +77,32 @@ export function getEndOfWeek(weeksOut = 0) {
     endDate.setHours(12, 0, 0, 0); // Noon (12:00 PM)
 
     return endDate;
+}
+
+
+function isISODate(str) {
+    // Regular expression for ISO Date format (YYYY-MM-DD)
+    const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    return isoDateRegex.test(str);
+}
+
+
+function isISODateTime(str) {
+    // Regular expression for ISO Datetime format (YYYY-MM-DDTHH:mm:ss±hh:mm or without the timezone)
+    const isoDateTimeRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/;
+    return isoDateTimeRegex.test(str);
+}
+
+export function eventSort(a,b){
+    // sort start times in order
+    let aDateTime = isISODate(a.startDate) ? getDateFromISODate(a.startDate) : new Date(a.startDate); 
+    let bDateTime = isISODate(b.startDate) ? getDateFromISODate(b.startDate) : new Date(b.startDate); 
+
+    // if all day event, place at the end of the day
+    if (isISODate(a.startDate))
+        aDateTime.setDate(aDateTime.getDate() + 1);
+    if (isISODate(b.startDate))
+        bDateTime.setDate(bDateTime.getDate() + 1);
+
+    return aDateTime - bDateTime;
 }

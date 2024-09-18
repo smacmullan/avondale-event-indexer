@@ -1,36 +1,24 @@
-import { google } from 'googleapis';
-import fs from 'fs'; // Change require to import
-import dotenv from 'dotenv'; // Change require to import
-import { formatTimeRange, formatDay, getEndOfWeek } from './utils/time.js';
+import fs from 'fs';
+import dotenv from 'dotenv'; 
 dotenv.config();
+import { formatTimeRange, formatDay, getEndOfWeek, eventSort } from './utils/time.js';
+import { fetchGoogleCalendarEvents } from './utils/eventApis.js';
 
 
-async function fetchCalendarEvents(calendarId) {
-    try {
-        const calendar = google.calendar({ version: 'v3', auth: process.env.GOOGLE_API_KEY });
-        const endDate = getEndOfWeek(2);
-
-        // Fetch events from the calendar
-        const response = await calendar.events.list({
-            calendarId: calendarId,
-            timeMin: (new Date()).toISOString(), // Start time (current date/time)
-            timeMax: endDate.toISOString(),
-            maxResults: 20,
-            singleEvents: true,
-            orderBy: 'startTime',
-        });
-        const events = response.data.items;
-        return events;
-
-    } catch (error) {
-        console.error('Error fetching calendar events for ', calendarId);
-        return [];
+async function fetchEvents(org){
+    const endSearchDate = getEndOfWeek(2);
+    switch (org.eventApiType) {
+        case 'googleCalendar':
+            return await fetchGoogleCalendarEvents(org, endSearchDate);
+        default:
+            console.log(`No matching API format found for "${org.eventApiType}" at ${org.name}`)
+            return [];
     }
 }
 
-function printEventList(events, organizationsData) {
+function printEventList(events) {
     // Sort events by start date/time
-    events.sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date));
+    events.sort(eventSort);
 
     let currentDay = '';
     events.forEach(event => {
@@ -42,13 +30,11 @@ function printEventList(events, organizationsData) {
             console.log(`\n\n${eventDay}`);
         }
 
-        // Find the organization based on the organizer's email
-        const org = organizationsData.find(org => org.api === event.organizer.email);
-        const organizationName = org ? org.name : 'Unknown Organization';
+        const organizationName = event.organizer.name || "Unknown";
 
         // Format the event summary
         const timeRange = formatTimeRange(event);
-        console.log(`* ${timeRange} - ${event.summary} | ${organizationName}`);
+        console.log(`* ${timeRange} - ${event.name} | ${organizationName}`);
     });
 }
 
@@ -59,12 +45,12 @@ async function main() {
     const organizations = JSON.parse(fs.readFileSync('organizations.json', 'utf-8'));
 
     // Fetch events for each organization
-    const eventPromises = organizations.map(org => fetchCalendarEvents(org.api));
+    const eventPromises = organizations.map(org => fetchEvents(org));
     const allEventsArrays = await Promise.all(eventPromises);
 
     // Consolidate all events into one array and print the list
     const allEvents = allEventsArrays.flat();
-    printEventList(allEvents, organizations);
+    printEventList(allEvents);
 }
 
 main();
