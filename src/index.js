@@ -2,7 +2,7 @@ import fs from 'fs';
 import dotenv from 'dotenv'; 
 dotenv.config();
 import { formatTimeRange, formatDay, getEndOfWeek, eventSort } from './utils/time.js';
-import { fetchGoogleCalendarEvents } from './utils/eventApis.js';
+import { fetchEventsCalendarCoEvents, fetchGoogleCalendarEvents, fetchPlotEvents } from './utils/eventApis.js';
 
 
 async function fetchEvents(org){
@@ -10,6 +10,10 @@ async function fetchEvents(org){
     switch (org.eventApiType) {
         case 'googleCalendar':
             return await fetchGoogleCalendarEvents(org, endSearchDate);
+        case 'plot':
+            return await fetchPlotEvents(org, endSearchDate);
+        case 'eventsCalendarCo':
+            return await fetchEventsCalendarCoEvents(org, endSearchDate);
         default:
             console.log(`No matching API format found for "${org.eventApiType}" at ${org.name}`)
             return [];

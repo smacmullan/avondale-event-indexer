@@ -21,7 +21,7 @@
     },
     {
         "name": "Insect Asylum",
-        "eventApiType": "eventCalendars.co",
-        "api": "https://plugin.eventscalendar.co/api/eventbrite/events?user=user_deg5cbAfk1s2z6e6Nqm7J&project=proj_kzcnLsblbDS6HB8f1RPe9&calendar=43421436193&from=1725166800000&to=1728795600000&options=undefined"
+        "eventApiType": "eventsCalendarCo",
+        "api": "plugin.eventscalendar.co/api/eventbrite/events?user=user_deg5cbAfk1s2z6e6Nqm7J&project=proj_kzcnLsblbDS6HB8f1RPe9&calendar=43421436193"
     }
 ]
