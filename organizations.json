@@ -20,6 +20,31 @@
         "api": "sleeping-village.com"
     },
     {
+        "name": "Tutore Cooking School",
+        "eventApiType": "jsonLd",
+        "api": "https://www.tutorecookingschool.com/class-schedule"
+    },
+    {
+        "name": "Firefly Fiber Arts Studio",
+        "eventApiType": "jsonLd",
+        "api": "https://www.fireflyfiberarts.com/new-events-1"
+    },
+    {
+        "name": "Prism Games",
+        "eventApiType": "jsonLd",
+        "api": "https://www.prismgameschicago.com/events"
+    },
+    {
+        "name": "The Brewed",
+        "eventApiType": "jsonLd",
+        "api": "https://www.thebrewedcoffee.com/events"
+    },
+    {
+        "name": "Bric-a-Brac Records",
+        "eventApiType": "jsonLd",
+        "api": "https://www.bricabracrecords.com/upcoming-events"
+    },
+    {
         "name": "Insect Asylum",
         "eventApiType": "eventsCalendarCo",
         "api": "plugin.eventscalendar.co/api/eventbrite/events?user=user_deg5cbAfk1s2z6e6Nqm7J&project=proj_kzcnLsblbDS6HB8f1RPe9&calendar=43421436193"
