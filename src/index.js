@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { getEndOfWeek } from './utils/time.js';
 import { printEventList } from './utils/printEventList.js';
+import { fetchJsonLdEvents } from './utils/eventApis/jsonLd.js';
 import { fetchGoogleCalendarEvents } from './utils/eventApis/googleCalendar.js';
 import { fetchPlotEvents } from './utils/eventApis/plot.js';
 import { fetchEventsCalendarCoEvents } from './utils/eventApis/eventsCalendarCo.js';
@@ -9,6 +10,8 @@ import { fetchEventsCalendarCoEvents } from './utils/eventApis/eventsCalendarCo.
 async function fetchEvents(org){
     const endSearchDate = getEndOfWeek(2);
     switch (org.eventApiType) {
+        case 'jsonLd':
+            return await fetchJsonLdEvents(org, endSearchDate);
         case 'googleCalendar':
             return await fetchGoogleCalendarEvents(org, endSearchDate);
         case 'plot':
