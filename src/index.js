@@ -1,8 +1,9 @@
 import fs from 'fs';
-import dotenv from 'dotenv'; 
-dotenv.config();
-import { formatTimeRange, formatDay, getEndOfWeek, eventSort } from './utils/time.js';
-import { fetchEventsCalendarCoEvents, fetchGoogleCalendarEvents, fetchPlotEvents } from './utils/eventApis.js';
+import { getEndOfWeek } from './utils/time.js';
+import { printEventList } from './utils/printEventList.js';
+import { fetchGoogleCalendarEvents } from './utils/eventApis/googleCalendar.js';
+import { fetchPlotEvents } from './utils/eventApis/plot.js';
+import { fetchEventsCalendarCoEvents } from './utils/eventApis/eventsCalendarCo.js';
 
 
 async function fetchEvents(org){
@@ -20,32 +21,7 @@ async function fetchEvents(org){
     }
 }
 
-function printEventList(events) {
-    // Sort events by start date/time
-    events.sort(eventSort);
-
-    let currentDay = '';
-    events.forEach(event => {
-        const eventDay = formatDay(event);
-
-        // Print the day only once per group of events
-        if (eventDay !== currentDay) {
-            currentDay = eventDay;
-            console.log(`\n\n${eventDay}`);
-        }
-
-        const organizationName = event.organizer.name || "Unknown";
-
-        // Format the event summary
-        const timeRange = formatTimeRange(event);
-        console.log(`* ${timeRange} - ${event.name} | ${organizationName}`);
-    });
-}
-
-
-
 async function main() {
-
     const organizations = JSON.parse(fs.readFileSync('organizations.json', 'utf-8'));
 
     // Fetch events for each organization
