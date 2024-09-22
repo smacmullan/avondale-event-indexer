@@ -2,3 +2,4 @@ node_modules/
 sandbox/
 TODO.md
 .env
+output/
