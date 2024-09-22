@@ -34,8 +34,11 @@ async function main() {
     const eventPromises = organizations.map(org => fetchEvents(org));
     const allEventsArrays = await Promise.all(eventPromises);
 
-    // Consolidate all events into one array and print the list
+    // Consolidate all events into one array
     const allEvents = allEventsArrays.flat();
+    // Save events to json
+    fs.writeFileSync('output/events.json', JSON.stringify(allEvents, null, 2));
+    // Print event list
     printEventList(allEvents);
 }
 
