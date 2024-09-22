@@ -58,5 +58,15 @@
             "/events/month/",
             "/events/today/"
         ]
+    },
+    {
+        "name": "Late Bar",
+        "eventApiType": "do312",
+        "api": "https://do312.com/venues/late-bar.json"
+    },
+    {
+        "name": "Avondale Park",
+        "eventApiType": "microdata",
+        "api": "https://www.chicagoparkdistrict.com/parks-facilities/avondale-park"
     }
 ]

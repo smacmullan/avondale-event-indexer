@@ -104,11 +104,28 @@ function standardizeJsonLdEvent(event, org) {
     const { name, startDate, endDate, location } = event;
 
     return {
-        name,
+        name: decodeHtmlEntities(name),
         startDate,
         endDate,
         organizer: {
-            name: location?.name || org.name,
+            name: decodeHtmlEntities(location?.name) || org.name,
         },
     };
+}
+
+function decodeHtmlEntities(text) {
+    if(!text)
+        return null;
+    else if(text.includes("&") && text.includes(";")){
+        // use regex to replace HTML entities
+        return text.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
+        .replace(/&(#x[0-9A-Fa-f]+);/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)))
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+    }
+    else
+        return text;
 }
