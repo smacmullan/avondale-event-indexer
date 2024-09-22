@@ -48,5 +48,15 @@
         "name": "Insect Asylum",
         "eventApiType": "eventsCalendarCo",
         "api": "plugin.eventscalendar.co/api/eventbrite/events?user=user_deg5cbAfk1s2z6e6Nqm7J&project=proj_kzcnLsblbDS6HB8f1RPe9&calendar=43421436193"
+    },
+    {
+        "name": "Bud & Rita's",
+        "eventApiType": "jsonLd",
+        "api": "https://budandritas.com/events/",
+        "jsonLdLinkBlockList": [
+            "/events/list/",
+            "/events/month/",
+            "/events/today/"
+        ]
     }
 ]

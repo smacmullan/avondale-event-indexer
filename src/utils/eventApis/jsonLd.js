@@ -3,14 +3,13 @@ import * as cheerio from 'cheerio';
 // Function to scrape JSON-LD data from all event pages
 export async function fetchJsonLdEvents(org, endSearchDate) {
 
-    const eventHubPageUrl = org.api;
-    const eventLinks = await extractEventLinks(eventHubPageUrl);
+    const eventLinks = await extractEventLinks(org);
 
     // Concurrently get event data from individual event pages
     let allEventData = [];
     const eventExtractPromises = eventLinks.map(async (link) => {
         // Create a new URL by appending the subdirectory to the original URL
-        const fullUrl = new URL(link, eventHubPageUrl).toString();
+        const fullUrl = new URL(link, org.api).toString();
         try {
             const eventData = await extractJsonLdEvents(fullUrl);
             return eventData;  // Return the extracted data
@@ -59,9 +58,10 @@ async function extractJsonLdEvents(url) {
 }
 
 
-async function extractEventLinks(eventHubPageUrl) {
+async function extractEventLinks(org) {
     try {
         // Get and load the html
+        const eventHubPageUrl = org.api;
         const response = await fetch(eventHubPageUrl);
         const data = await response.text();
         const $ = cheerio.load(data);
@@ -71,19 +71,30 @@ async function extractEventLinks(eventHubPageUrl) {
         let eventLinks = [];
         $('a').each((i, element) => {
             const link = $(element).attr('href');
-            const cleanLink = link.split('?')[0]; //remove query parameters
-            if (cleanLink && (cleanLink.startsWith(baseDir) || cleanLink.startsWith(eventHubPageUrl) || cleanLink.includes("event"))) {
-                eventLinks.push(cleanLink);
+            if (link) {
+                const cleanLink = link.split('?')[0]; //remove query parameters
+                if (cleanLink.startsWith(baseDir) || cleanLink.startsWith(eventHubPageUrl) || cleanLink.includes("event"))
+                    eventLinks.push(cleanLink);
             }
         });
 
         // deduplicate event links
         eventLinks = Array.from(new Set(eventLinks));
 
+        // Remove the hub link if it shows up on the page
+        eventLinks = eventLinks.filter(link => link !== eventHubPageUrl);
+
+        // Filter out links on block list
+        if (org.jsonLdLinkBlockList) {
+            eventLinks = eventLinks.filter(link =>
+                !org.jsonLdLinkBlockList.some(toRemove => link.endsWith(toRemove))
+            );
+        }
+
         return eventLinks;
 
     } catch (error) {
-        console.error('Error fetching the main event page:', error);
+        console.error(`Error fetching the main event page "${eventHubPageUrl}":`, error);
         return [];
     }
 }
