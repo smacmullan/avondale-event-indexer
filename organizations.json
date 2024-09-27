@@ -68,5 +68,10 @@
         "name": "Avondale Park",
         "eventApiType": "microdata",
         "api": "https://www.chicagoparkdistrict.com/parks-facilities/avondale-park"
+    },
+    {
+        "name": "Athletic Field Park",
+        "eventApiType": "microdata",
+        "api": "https://www.chicagoparkdistrict.com/parks-facilities/athletic-field-park"
     }
 ]
