@@ -7,6 +7,7 @@ import { fetchPlotEvents } from './utils/eventApis/plot.js';
 import { fetchEventsCalendarCoEvents } from './utils/eventApis/eventsCalendarCo.js';
 import { fetchDo312Events } from './utils/eventApis/do312.js';
 import { fetchWebCalEvents } from './utils/eventApis/webcal.js';
+import { fetchMicrodataEvents } from './utils/eventApis/microdata.js';
 
 
 async function fetchEvents(org){
@@ -22,6 +23,8 @@ async function fetchEvents(org){
             return await fetchDo312Events(org, endSearchDate);
         case 'webCal':
             return await fetchWebCalEvents(org, endSearchDate);
+        case 'microdata':
+            return await fetchMicrodataEvents(org, endSearchDate);
         case 'eventsCalendarCo':
             return await fetchEventsCalendarCoEvents(org, endSearchDate);
         default:
