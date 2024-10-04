@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { formatTimeRange, formatDay, eventSort } from './time.js';
+import { formatTimeRange, formatDay, eventSort } from './utils/time.js';
 
 export function printEventList(events, filePath = "output/eventList.txt") {
     // Sort events by start date/time
@@ -41,7 +41,7 @@ function cleanupEvents(events) {
 
         // Remove events with "closed" in the name
         if (eventName.toLowerCase().includes('closed')) {
-            console.log(`"${event.name}" removed from the event list`);
+            console.log(`Removed "${event.name}" from the event list`);
             return false; // Filter out the event
         }
 
