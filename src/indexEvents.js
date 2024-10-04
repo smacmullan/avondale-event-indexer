@@ -1,6 +1,5 @@
 import fs from 'fs';
 import { getEndOfWeek } from './utils/time.js';
-import { printEventList } from './utils/printEventList.js';
 import { fetchJsonLdEvents } from './utils/eventApis/jsonLd.js';
 import { fetchGoogleCalendarEvents } from './utils/eventApis/googleCalendar.js';
 import { fetchPlotEvents } from './utils/eventApis/plot.js';
@@ -10,8 +9,8 @@ import { fetchWebCalEvents } from './utils/eventApis/webcal.js';
 import { fetchMicrodataEvents } from './utils/eventApis/microdata.js';
 
 
-async function fetchEvents(org){
-    const endSearchDate = getEndOfWeek(2);
+async function fetchEvents(org) {
+    const endSearchDate = getEndOfWeek(1);
     switch (org.eventApiType) {
         case 'jsonLd':
             return await fetchJsonLdEvents(org, endSearchDate);
@@ -33,8 +32,9 @@ async function fetchEvents(org){
     }
 }
 
-async function main() {
-    const organizations = JSON.parse(fs.readFileSync('organizations.json', 'utf-8'));
+export async function indexEvents(organizations) {
+
+    console.log("Getting event data...");
 
     // Fetch events for each organization
     const eventPromises = organizations.map(org => fetchEvents(org));
@@ -42,10 +42,11 @@ async function main() {
 
     // Consolidate all events into one array
     const allEvents = allEventsArrays.flat();
-    // Save events to json
-    fs.writeFileSync('output/events.json', JSON.stringify(allEvents, null, 2));
-    // Print event list
-    printEventList(allEvents);
-}
 
-main();
+    // Save events to json
+    const filePath = 'output/events.json';
+    fs.writeFileSync(filePath, JSON.stringify(allEvents, null, 2));
+    console.log(`Event data saved to "${filePath}"`);
+
+    return allEvents;
+}
