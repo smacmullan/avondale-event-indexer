@@ -13,6 +13,8 @@
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.4.5",
     "googleapis": "^144.0.0",
-    "ical": "^0.8.0"
+    "ical": "^0.8.0",
+    "markdown-it": "^14.1.0",
+    "puppeteer": "^23.5.0"
   }
 }

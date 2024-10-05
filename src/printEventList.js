@@ -1,27 +1,27 @@
 import fs from 'fs';
 import { formatTimeRange, formatDay, eventSort } from './utils/time.js';
 
-export function printEventList(events, filePath = "output/eventList.txt") {
+export function printEventList(events, filePath = "output/eventList.md") {
     // Sort events by start date/time
     events.sort(eventSort);
     events = cleanupEvents(events);
 
     let currentDay = '';
-    let textOutput = '';
+    let textOutput = '# Avondale Events';
     events.forEach(event => {
         const eventDay = formatDay(event);
 
         // Print the day only once per group of events
         if (eventDay !== currentDay) {
             currentDay = eventDay;
-            textOutput += `\n\n${eventDay}\n`;
+            textOutput += `\n\n## ${eventDay}\n`;
         }
 
         const organizationName = event.organizer.name || "Unknown";
 
         // Format the event summary
         const timeRange = formatTimeRange(event);
-        textOutput += `* ${timeRange} - ${event.name} | ${organizationName}\n`;
+        textOutput += `* **${timeRange}**   ${event.name} | ${organizationName}\n`;
     });
 
     try {
