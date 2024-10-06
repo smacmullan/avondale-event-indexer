@@ -26,7 +26,7 @@ const md = new MarkdownIt();
 const markdownContent = fs.readFileSync('./output/eventList.md', 'utf-8');
 const htmlContent = md.render(markdownContent);
 
-// Function to generate images from HTML
+// Function to generate images from HTML without splitting days
 async function generateImagesFromHTML(htmlContent) {
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
@@ -34,36 +34,59 @@ async function generateImagesFromHTML(htmlContent) {
     // Set page size to Instagram post size (1080x1080 pixels)
     await page.setViewport({ width: 1080, height: 1080 });
 
-    // Function to split HTML content into separate pages
-    const splitHTMLIntoPages = (htmlContent, pageHeight) => {
-        const lines = htmlContent.split('\n'); // Split by lines or elements
-        let currentHeight = 0;
-        let currentChunk = '';
-        const chunks = [];
+    // Set content with the entire HTML
+    await page.setContent(wrapHtmlInStyle(htmlContent));
 
-        lines.forEach((line) => {
-            currentHeight += 40; // Estimate height for each line or adjust based on your styling
-            if (currentHeight > pageHeight) {
-                chunks.push(currentChunk);
-                currentChunk = '';
-                currentHeight = 40; // Reset height for new page
-            }
-            currentChunk += line + '\n';
+    // Extract all days and their corresponding events
+    const daySections = await page.evaluate(() => {
+        const days = [];
+        const headings = document.querySelectorAll('h2');
+
+        headings.forEach(heading => {
+            const nextElement = heading.nextElementSibling;
+            const list = nextElement && nextElement.tagName === 'UL' ? nextElement.outerHTML : '';
+            days.push({
+                heading: heading.outerHTML,
+                events: list
+            });
         });
 
-        if (currentChunk) chunks.push(currentChunk);
-        return chunks;
-    };
+        return days;
+    });
 
-    // Split the HTML content to fit into multiple images if necessary
-    const htmlChunks = splitHTMLIntoPages(htmlContent, 1000);
+    let pageNumber = 1;
 
-    // Loop through each chunk and generate an image
-    for (let i = 0; i < htmlChunks.length; i++) {
-        const htmlChunk = htmlChunks[i];
+    for (const day of daySections) {
+        const dayHTML = day.heading + day.events;
 
-        // Set the page content to the chunk of HTML
-        await page.setContent(`
+        // Set the content to the current day's HTML
+        await page.setContent(wrapHtmlInStyle(dayHTML));
+
+        // Check if the content fits within the page height, if not, split it
+        const contentHeight = await page.evaluate(() => document.body.scrollHeight);
+
+        // Take a screenshot of the current page
+        await page.screenshot({ path: `${folderPath}/event_post_image_${pageNumber}.png` });
+
+        pageNumber++;
+    }
+
+    // Close the browser
+    await browser.close();
+}
+
+// Generate images from the HTML content
+generateImagesFromHTML(htmlContent)
+    .then(() => {
+        console.log('Event images generated successfully!');
+    })
+    .catch((err) => {
+        console.error('Error generating event images:', err);
+    });
+
+
+function wrapHtmlInStyle(htmlContent) {
+    return `
             <html>
                 <head>
                 <style>
@@ -116,24 +139,9 @@ async function generateImagesFromHTML(htmlContent) {
                 </style>
                 </head>
                 <body class="markdown-body">
-                ${htmlChunk}
+                ${htmlContent}
                 </body>
             </html>
-            `);
+            `;
 
-        // Take a screenshot of the rendered content
-        await page.screenshot({ path: `${folderPath}/event_post_image_${i + 1}.png` });
-    }
-
-    // Close the browser
-    await browser.close();
-};
-
-// Generate images from the HTML content
-generateImagesFromHTML(htmlContent)
-    .then(() => {
-        console.log('Event images generated successfully!');
-    })
-    .catch((err) => {
-        console.error('Error generating event images:', err);
-    });
+}

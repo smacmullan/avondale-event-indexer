@@ -7,7 +7,7 @@ export function printEventList(events, filePath = "output/eventList.md") {
     events = cleanupEvents(events);
 
     let currentDay = '';
-    let textOutput = '# Avondale Events';
+    let textOutput = '';
     events.forEach(event => {
         const eventDay = formatDay(event);
 
