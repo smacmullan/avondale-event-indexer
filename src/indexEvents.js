@@ -7,6 +7,7 @@ import { fetchEventsCalendarCoEvents } from './utils/eventApis/eventsCalendarCo.
 import { fetchDo312Events } from './utils/eventApis/do312.js';
 import { fetchWebCalEvents } from './utils/eventApis/webcal.js';
 import { fetchMicrodataEvents } from './utils/eventApis/microdata.js';
+import { fetchGoogleSheetEvents } from './utils/eventApis/googleSheet.js';
 
 
 async function fetchEvents(org) {
@@ -16,6 +17,8 @@ async function fetchEvents(org) {
             return await fetchJsonLdEvents(org, endSearchDate);
         case 'googleCalendar':
             return await fetchGoogleCalendarEvents(org, endSearchDate);
+        case 'googleSheet':
+            return await fetchGoogleSheetEvents(org, endSearchDate);
         case 'plot':
             return await fetchPlotEvents(org, endSearchDate);
         case 'do312':
