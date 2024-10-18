@@ -3,3 +3,4 @@ sandbox/
 TODO.md
 .env
 output/
+build/
