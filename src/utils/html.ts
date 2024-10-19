@@ -1,4 +1,4 @@
-export function decodeHtmlEntities(text) {
+export function decodeHtmlEntities(text: string) {
     if (!text)
         return null;
     else if (text.includes("&") && text.includes(";")) {

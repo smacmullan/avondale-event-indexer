@@ -8,9 +8,10 @@ import { fetchDo312Events } from './utils/eventApis/do312.js';
 import { fetchWebCalEvents } from './utils/eventApis/webcal.js';
 import { fetchMicrodataEvents } from './utils/eventApis/microdata.js';
 import { fetchGoogleSheetEvents } from './utils/eventApis/googleSheet.js';
+import { Organization } from './definitions.js';
 
 
-async function fetchEvents(org) {
+async function fetchEvents(org: Organization) {
     const endSearchDate = getEndOfWeek(1);
     switch (org.eventApiType) {
         case 'jsonLd':
@@ -35,7 +36,7 @@ async function fetchEvents(org) {
     }
 }
 
-export async function indexEvents(organizations) {
+export async function indexEvents(organizations: Organization[]) {
 
     console.log("Getting event data...");
 

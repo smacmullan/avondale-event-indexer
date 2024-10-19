@@ -1,7 +1,8 @@
 import fs from 'fs';
 import { formatTimeRange, formatDay, eventSort } from './utils/time.js';
+import { Event } from './definitions.js';
 
-export function printEventList(events, filePath = "output/eventList.md") {
+export function printEventList(events: Event[], filePath = "output/eventList.md") {
     // Sort events by start date/time
     events.sort(eventSort);
     events = cleanupEvents(events);
@@ -17,7 +18,7 @@ export function printEventList(events, filePath = "output/eventList.md") {
             textOutput += `\n\n## ${eventDay}\n`;
         }
 
-        const organizationName = event.organizer.name || "Unknown";
+        const organizationName = event.organizer?.name || "Unknown";
 
         // Format the event summary
         const timeRange = formatTimeRange(event);
@@ -35,12 +36,12 @@ export function printEventList(events, filePath = "output/eventList.md") {
 /**
 * Remove closed events and trim names that include locations.
 */
-function cleanupEvents(events) {
+function cleanupEvents(events: Event[]) {
     events = events.filter(event => {
-        let eventName = event.name;
+        let eventName = event.name as string;
 
         // Remove events with "closed" in the name
-        if (eventName.toLowerCase().includes('closed')) {
+        if (!eventName || eventName.toLowerCase().includes('closed')) {
             console.log(`Removed "${event.name}" from the event list`);
             return false; // Filter out the event
         }
