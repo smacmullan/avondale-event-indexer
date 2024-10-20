@@ -1,8 +1,9 @@
 import * as cheerio from 'cheerio';
 import { decodeHtmlEntities } from '../html.js';
+import { Organization, Event } from '../../definitions.js';
 
 // Function to scrape JSON-LD data from all event pages
-export async function fetchJsonLdEvents(org, endSearchDate) {
+export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
 
     const eventLinks = await extractEventLinks(org);
 
@@ -33,19 +34,21 @@ export async function fetchJsonLdEvents(org, endSearchDate) {
 }
 
 
-async function extractJsonLdEvents(url) {
+async function extractJsonLdEvents(url: string) {
     try {
         const response = await fetch(url);
         const data = await response.text();
         const $ = cheerio.load(data);
 
-        let jsonLDData = [];
+        let jsonLDData: any[] = [];
         $('script[type="application/ld+json"]').each((i, element) => {
             const jsonLD = $(element).html();
-            try {
-                jsonLDData.push(JSON.parse(jsonLD));
-            } catch (error) {
-                console.error('Error parsing JSON-LD:', error);
+            if (jsonLD) {
+                try {
+                    jsonLDData.push(JSON.parse(jsonLD));
+                } catch (error) {
+                    console.error('Error parsing JSON-LD:', error);
+                }
             }
         });
 
@@ -59,17 +62,17 @@ async function extractJsonLdEvents(url) {
 }
 
 
-async function extractEventLinks(org) {
+async function extractEventLinks(org: Organization): Promise<string[]> {
+    const eventHubPageUrl = org.api;
     try {
         // Get and load the html
-        const eventHubPageUrl = org.api;
         const response = await fetch(eventHubPageUrl);
         const data = await response.text();
         const $ = cheerio.load(data);
 
         // Get all event links on the page
         let baseDir = (new URL(eventHubPageUrl)).pathname;
-        let eventLinks = [];
+        let eventLinks: string[] = [];
         $('a').each((i, element) => {
             const link = $(element).attr('href');
             if (link) {
@@ -86,9 +89,10 @@ async function extractEventLinks(org) {
         eventLinks = eventLinks.filter(link => link !== eventHubPageUrl);
 
         // Filter out links on block list
-        if (org.jsonLdLinkBlockList) {
+        let blockList = org.jsonLdLinkBlockList;
+        if (blockList) {
             eventLinks = eventLinks.filter(link =>
-                !org.jsonLdLinkBlockList.some(toRemove => link.endsWith(toRemove))
+                !blockList.some(toRemove => link.endsWith(toRemove))
             );
         }
 
@@ -101,7 +105,7 @@ async function extractEventLinks(org) {
 }
 
 
-function standardizeJsonLdEvent(event, org) {
+function standardizeJsonLdEvent(event: any, org: Organization): Event {
     const { name, startDate, endDate, location } = event;
 
     return {

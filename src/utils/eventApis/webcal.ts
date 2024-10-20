@@ -1,8 +1,8 @@
-
 import ical from 'ical';
 import { decodeHtmlEntities } from '../html.js';
+import { Organization, Event } from '../../definitions.js';
 
-export async function fetchWebCalEvents(org, endSearchDate) {
+export async function fetchWebCalEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         const response = await fetch(org.api);
         const data = await response.text();
@@ -16,9 +16,9 @@ export async function fetchWebCalEvents(org, endSearchDate) {
     }
 }
 
-function filterEvents(data, endDate) {
+function filterEvents(data: ical.FullCalendar, endDate: Date) {
     const today = new Date();
-    const events = Object.values(data).filter(event => {
+    const events = Object.values(data).filter((event: any )=> {
         if (event.type === 'VEVENT') {
             const eventStart = new Date(event.start);
             // const eventEnd = new Date(event.end);
@@ -31,11 +31,11 @@ function filterEvents(data, endDate) {
 }
 
 
-function standardizeWebCalEvent(event, org) {
+function standardizeWebCalEvent(event: any, org: Organization): Event {
     return {
         name: decodeHtmlEntities(event.summary),
-        startDate: new Date(event.start),
-        endDate: new Date(event.end),
+        startDate: event.start,
+        endDate: event.end,
         organizer: {
             name: event.organizer ? decodeHtmlEntities(event.organizer.val) : org.name,
         },

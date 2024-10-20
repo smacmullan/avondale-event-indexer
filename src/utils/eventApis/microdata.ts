@@ -1,13 +1,14 @@
 import * as cheerio from 'cheerio';
+import { Organization, Event } from '../../definitions.js';
 
-export async function fetchMicrodataEvents(org, endSearchDate) {
+export async function fetchMicrodataEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         const response = await fetch(org.api);
         const data = await response.text();
         const $ = cheerio.load(data);
 
         // Extract event microdata
-        const events = [];
+        const events: Event[] = [];
         $('article.event-list-object').each((i, element) => {
             const eventName = $(element).find('.event-object-title a[itemprop="name"] span').text().trim();
             const eventDate = $(element).find('meta[itemprop="startDate"]').attr('content');
@@ -15,7 +16,7 @@ export async function fetchMicrodataEvents(org, endSearchDate) {
 
             events.push({
                 name: eventName,
-                startDate: new Date(eventDate + "Z"), // "Z" forces dates to be treated as UTC
+                startDate: eventDate + "Z", // "Z" forces dates to be treated as UTC
                 organizer: {
                     name: eventLocation || org.name,
                 }
@@ -24,7 +25,7 @@ export async function fetchMicrodataEvents(org, endSearchDate) {
 
         // filter events by date
         let today = new Date();
-        let filteredEvents = events.filter(event => event.startDate && event.startDate > today && event.startDate < endSearchDate);
+        let filteredEvents = events.filter(event => event.startDate && new Date(event.startDate) > today && new Date(event.startDate) < endSearchDate);
 
         return filteredEvents;
     } catch (error) {

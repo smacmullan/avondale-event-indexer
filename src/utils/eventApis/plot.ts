@@ -1,5 +1,6 @@
+import { Organization, Event } from '../../definitions.js';
 
-export async function fetchPlotEvents(org, endSearchDate) {
+export async function fetchPlotEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         // put dates into YYYY-MM-DD format
         const today = new Date().toISOString().split('T')[0];
@@ -15,22 +16,24 @@ export async function fetchPlotEvents(org, endSearchDate) {
     }
 }
 
-function standardizePlotEvent(event) {
+function standardizePlotEvent(event: any): Event {
     const { title, dateTime, venue } = event;
 
 
     return {
         name: title,
-        startDate: parseDateFromPlotDateTime(dateTime).toISOString(),
+        startDate: parseDateFromPlotDateTime(dateTime),
         organizer: {
             name: venue,
         },
     };
 }
 
-function parseDateFromPlotDateTime(dateTime) {
+function parseDateFromPlotDateTime(dateTime: string) {
     // Extract the components of the dateTime string using regex
-    const [_, month, day, time, meridian] = dateTime.match(/\w{3}, (\w{3}) (\d{1,2}) (\d{1,2}:\d{2})(AM|PM)/);
+    const match = dateTime.match(/\w{3}, (\w{3}) (\d{1,2}) (\d{1,2}:\d{2})(AM|PM)/);
+    if(!match) return "";
+    const [_, month, day, time, meridian] = match;
     // Map the month abbreviation to the corresponding numeric value
     const monthMap = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
     // Parse the hour and minute from the time string
@@ -42,13 +45,17 @@ function parseDateFromPlotDateTime(dateTime) {
     // Calculate the year (not provided in parsed information)
     const today = new Date();
     let year;
-    if (month < today.getMonth())
+    if (+month < today.getMonth())
         year = today.getFullYear() + 1; // next year
     else
         year = today.getFullYear(); // this year
 
 
     // Create a Date object with the parsed information
-    const date = new Date(year, monthMap[month], day, hours, minutes, 0)
-    return date;
+    if (month in monthMap) {
+        const date = new Date(year, monthMap[month as keyof typeof monthMap], +day, hours, minutes, 0);
+        return date.toISOString();
+    } else {
+        throw new Error(`Invalid month: ${month}`);
+    }
 }

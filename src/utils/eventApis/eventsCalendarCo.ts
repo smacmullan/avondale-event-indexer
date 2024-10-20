@@ -1,5 +1,6 @@
+import { Organization, Event } from '../../definitions.js';
 
-export async function fetchEventsCalendarCoEvents(org, endSearchDate) {
+export async function fetchEventsCalendarCoEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         // put dates into Unix timestamp format
         const today = new Date().getTime();
@@ -15,7 +16,7 @@ export async function fetchEventsCalendarCoEvents(org, endSearchDate) {
     }
 }
 
-function standardizeEventsCalendarCoEvent(event) {
+function standardizeEventsCalendarCoEvent(event: any): Event {
     const { title, start_time, end_time, location } = event;
 
     return {
