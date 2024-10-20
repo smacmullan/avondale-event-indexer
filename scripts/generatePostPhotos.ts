@@ -27,19 +27,19 @@ const markdownContent = fs.readFileSync('./output/eventList.md', 'utf-8');
 const htmlContent = md.render(markdownContent);
 
 // Function to generate images from HTML without splitting days
-async function generateImagesFromHTML(htmlContent) {
+async function generateImagesFromHTML(htmlContent: string) {
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
     // Set page size to Instagram post size (1080x1080 pixels)
-    await page.setViewport({ width: 1080, height: 1080 });
+    await page.setViewport({ width: 1080, height: 1350 });
 
     // Set content with the entire HTML
     await page.setContent(wrapHtmlInStyle(htmlContent));
 
     // Extract all days and their corresponding events
     const daySections = await page.evaluate(() => {
-        const days = [];
+        const days: any[] = [];
         const headings = document.querySelectorAll('h2');
 
         headings.forEach(heading => {
@@ -85,7 +85,7 @@ generateImagesFromHTML(htmlContent)
     });
 
 
-function wrapHtmlInStyle(htmlContent) {
+function wrapHtmlInStyle(htmlContent: string) {
     return `
             <html>
                 <head>
