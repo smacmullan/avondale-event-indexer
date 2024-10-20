@@ -23,7 +23,7 @@ export function formatTimeRange(event: Event) {
         return formatTime(start);
     }
 
-    const end = new Date(event.endDate);
+    const end = new Date(event.endDate as string);
     const endHours = end.getHours();
 
     const isSameTime = start.getTime() === end.getTime();

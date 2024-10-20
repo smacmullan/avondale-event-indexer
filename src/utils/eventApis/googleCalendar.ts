@@ -1,8 +1,9 @@
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
+import { Organization, Event } from '../../definitions.js';
 dotenv.config();
 
-export async function fetchGoogleCalendarEvents(org, endSearchDate) {
+export async function fetchGoogleCalendarEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         const calendar = google.calendar({ version: 'v3', auth: process.env.GOOGLE_API_KEY });
         const calendarId = org.api;
@@ -16,7 +17,7 @@ export async function fetchGoogleCalendarEvents(org, endSearchDate) {
             singleEvents: true,
             orderBy: 'startTime',
         });
-        const events = response.data.items;
+        const events = response.data.items || [];
         return events.map(event => standardizeGoogleEvent(event, org));
 
     } catch (error) {
@@ -25,7 +26,7 @@ export async function fetchGoogleCalendarEvents(org, endSearchDate) {
     }
 }
 
-function standardizeGoogleEvent(event, org) {
+function standardizeGoogleEvent(event: any, org: Organization): Event {
     return {
         name: event.summary,
         startDate: event.start.dateTime || event.start.date || undefined,
