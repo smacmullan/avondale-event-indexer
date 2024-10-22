@@ -80,6 +80,12 @@
         "api": "webmaster@unityparkchicago.org"
     },
     {
+        "name": "Hairpin Arts Center",
+        "eventApiType": "jsonLd",
+        "api": "https://www.eventbrite.com/o/hairpin-arts-center-14932154492",
+        "jsonLdEventLinkMustInclude": "/e/"
+    },
+    {
         "name": "Avondale Events Form Submissions",
         "eventApiType": "googleSheet",
         "api": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"

@@ -13,6 +13,7 @@ export type Organization = {
     eventApiType: string,
     api: string,
     jsonLdLinkBlockList?: string[];
+    jsonLdEventLinkMustInclude?: string;
 };
 
 type ISODate = string; // Expected format: YYYY-MM-DD
