@@ -51,9 +51,9 @@ async function extractJsonLdEvents(url: string) {
                 }
             }
         });
-
+        
         jsonLDData = jsonLDData.flat();
-        const events = jsonLDData.filter(item => item['@type'] == 'Event');
+        const events = jsonLDData.filter(item => item['@type'] && item['@type'].includes("Event"));
         return events;
     } catch (error) {
         console.error('Error fetching the page:', error);
@@ -77,7 +77,9 @@ async function extractEventLinks(org: Organization): Promise<string[]> {
             const link = $(element).attr('href');
             if (link) {
                 const cleanLink = link.split('?')[0]; //remove query parameters
-                if (cleanLink.startsWith(baseDir) || cleanLink.startsWith(eventHubPageUrl) || cleanLink.includes("event"))
+                if (cleanLink.startsWith(baseDir)
+                    || cleanLink.startsWith(eventHubPageUrl)
+                    || cleanLink.includes(org.jsonLdEventLinkMustInclude || "event"))
                     eventLinks.push(cleanLink);
             }
         });
