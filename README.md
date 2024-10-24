@@ -52,18 +52,19 @@ This project uses TypeScript. Run all scripts using `npx tsx /path/to/script.tx`
 ## index.js
 
 Run this script to fetch event data and produce an event list. This will save two files to `/output`:
-* `events.json` - the raw event data
+* `rawEvents.json` - the raw event data
+* `events.json` - cleaned event data. Redundant place names and closed events are removed.
 * `eventList.md` - a markdown file that lists the events by day.
 
 > Running index.js is equivalent to running **getEventData.js** followed by **generateEventList.js**.
 
 ## getEventData.js
 
-Use this script to re-fetch event data. The event data is saved to `events.json`.
+Use this script to re-fetch event data. The event data is saved to `rawEvents.json`.
 
 ## generateEventList.js
 
-Use this script to take existing event data in `events.json` and re-create the `eventList.md` event list. This is useful for testing formatting changes without needing to re-fetch the data.
+Use this script to take existing event data in `rawEvents.json` and re-create the `eventList.md` event list and cleaned `events.json` file. This is useful for testing formatting changes without needing to re-fetch the data.
 
 ## generatePostPhotos.js
 

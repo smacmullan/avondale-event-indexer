@@ -86,6 +86,11 @@
         "jsonLdEventLinkMustInclude": "/e/"
     },
     {
+        "name": "Avondale Music Hall",
+        "eventApiType": "do312",
+        "api": "https://do312.com/venues/avondale-music-hall.json"
+    },
+    {
         "name": "Avondale Events Form Submissions",
         "eventApiType": "googleSheet",
         "api": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"

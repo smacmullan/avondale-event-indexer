@@ -48,7 +48,7 @@ export async function indexEvents(organizations: Organization[]) {
     const allEvents = allEventsArrays.flat();
 
     // Save events to json
-    const filePath = 'output/events.json';
+    const filePath = 'output/rawEvents.json';
     fs.writeFileSync(filePath, JSON.stringify(allEvents, null, 2));
     console.log(`Event data saved to "${filePath}"`);
 
