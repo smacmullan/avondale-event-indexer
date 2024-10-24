@@ -3,9 +3,15 @@ import { formatTimeRange, formatDay, eventSort } from './utils/time.js';
 import { Event } from './definitions.js';
 
 export function printEventList(events: Event[], filePath = "output/eventList.md") {
-    // Sort events by start date/time
+
     events.sort(eventSort);
     events = cleanupEvents(events);
+
+    try {
+        fs.writeFileSync("output/events.json", JSON.stringify(events, null, 2));
+    } catch (err) {
+        console.error('Error writing event data to file', err);
+    }
 
     let currentDay = '';
     let textOutput = '';
