@@ -12,7 +12,7 @@ import { Event, Organization } from './definitions.js';
 
 
 async function fetchEvents(org: Organization): Promise<Event[]> {
-    const endSearchDate = getEndOfWeek(1);
+    const endSearchDate = getEndOfWeek(2);
     switch (org.eventApiType) {
         case 'jsonLd':
             return await fetchJsonLdEvents(org, endSearchDate);

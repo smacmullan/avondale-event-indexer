@@ -92,6 +92,7 @@ function rowToEvent(row: string[]): Event {
         organizer: {
             name: row[3],
         },
+        url: row[4] || undefined,
     }
 }
 

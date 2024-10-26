@@ -2,17 +2,20 @@
     {
         "name": "Avondale Gardening Alliance",
         "eventApiType": "googleCalendar",
-        "api": "0130a6e9ed7e9a08143a4105243a6e93f1f738a8a17d6c90a7af0f5d7bb24d2d@group.calendar.google.com"
+        "api": "0130a6e9ed7e9a08143a4105243a6e93f1f738a8a17d6c90a7af0f5d7bb24d2d@group.calendar.google.com",
+        "eventPageUrl": "https://avondalegardeningalliance.wordpress.com/about/aga-calendar/"
     },
     {
         "name": "Reed's Local",
         "eventApiType": "googleCalendar",
-        "api": "reedslocaltap@gmail.com"
+        "api": "reedslocaltap@gmail.com",
+        "eventPageUrl": "https://reedslocal.com/events/"
     },
     {
         "name": "Consignment Lounge",
         "eventApiType": "googleCalendar",
-        "api": "9126428df9b2d09369486b0edc22fefda299ed3f2f45b4da777557902c662f3d@group.calendar.google.com"
+        "api": "9126428df9b2d09369486b0edc22fefda299ed3f2f45b4da777557902c662f3d@group.calendar.google.com",
+        "eventPageUrl": "https://www.consignmentlounge.com/calendar"
     },
     {
         "name": "Sleeping Village",
@@ -77,7 +80,8 @@
     {
         "name": "Unity Park",
         "eventApiType": "googleCalendar",
-        "api": "webmaster@unityparkchicago.org"
+        "api": "webmaster@unityparkchicago.org",
+        "eventPageUrl": "https://www.unityparkchicago.org/coming-events"
     },
     {
         "name": "Hairpin Arts Center",

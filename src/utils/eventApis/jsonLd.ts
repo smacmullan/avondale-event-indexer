@@ -40,20 +40,24 @@ async function extractJsonLdEvents(url: string) {
         const data = await response.text();
         const $ = cheerio.load(data);
 
-        let jsonLDData: any[] = [];
+        let jsonLdData: any[] = [];
         $('script[type="application/ld+json"]').each((i, element) => {
-            const jsonLD = $(element).html();
-            if (jsonLD) {
+            const jsonLd = $(element).html();
+            if (jsonLd) {
                 try {
-                    jsonLDData.push(JSON.parse(jsonLD));
+                    let jsonLdJSON = JSON.parse(jsonLd);
+                    if (jsonLdJSON && !jsonLdJSON.url)
+                        jsonLdJSON.url = url;
+
+                    jsonLdData.push(jsonLdJSON);
                 } catch (error) {
                     console.error('Error parsing JSON-LD:', error);
                 }
             }
         });
         
-        jsonLDData = jsonLDData.flat();
-        const events = jsonLDData.filter(item => item['@type'] && item['@type'].includes("Event"));
+        jsonLdData = jsonLdData.flat();
+        const events = jsonLdData.filter(item => item['@type'] && item['@type'].includes("Event"));
         return events;
     } catch (error) {
         console.error('Error fetching the page:', error);
@@ -108,7 +112,7 @@ async function extractEventLinks(org: Organization): Promise<string[]> {
 
 
 function standardizeJsonLdEvent(event: any, org: Organization): Event {
-    const { name, startDate, endDate, location } = event;
+    const { name, startDate, endDate, location, url } = event;
 
     return {
         name: decodeHtmlEntities(name),
@@ -117,5 +121,6 @@ function standardizeJsonLdEvent(event: any, org: Organization): Event {
         organizer: {
             name: decodeHtmlEntities(location?.name) || org.name,
         },
+        url,
     };
 }

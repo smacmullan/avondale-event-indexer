@@ -34,5 +34,6 @@ function standardizeGoogleEvent(event: any, org: Organization): Event {
         organizer: {
             name: org.name,
         },
+        url: org.eventPageUrl,
     };
 }

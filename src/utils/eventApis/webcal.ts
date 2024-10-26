@@ -39,5 +39,6 @@ function standardizeWebCalEvent(event: any, org: Organization): Event {
         organizer: {
             name: event.organizer ? decodeHtmlEntities(event.organizer.val) : org.name,
         },
+        url: org.eventPageUrl,
     };
 }
