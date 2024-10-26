@@ -27,5 +27,6 @@ function standardizeDo312Event(event: any): Event {
         organizer: {
             name: event.venue.title,
         },
+        url: event.permalink ? `https://do312.com${event.permalink}`: undefined,
     };
 }

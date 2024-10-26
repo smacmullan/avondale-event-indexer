@@ -17,7 +17,7 @@ export async function fetchEventsCalendarCoEvents(org: Organization, endSearchDa
 }
 
 function standardizeEventsCalendarCoEvent(event: any): Event {
-    const { title, start_time, end_time, location } = event;
+    const { title, start_time, end_time, location, event_link } = event;
 
     return {
         name: title,
@@ -26,5 +26,6 @@ function standardizeEventsCalendarCoEvent(event: any): Event {
         organizer: {
             name: location,
         },
+        url: event_link || undefined,
     };
 }

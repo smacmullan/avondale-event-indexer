@@ -17,7 +17,7 @@ export async function fetchPlotEvents(org: Organization, endSearchDate: Date): P
 }
 
 function standardizePlotEvent(event: any): Event {
-    const { title, dateTime, venue } = event;
+    const { title, dateTime, venue, permalink } = event;
 
 
     return {
@@ -26,6 +26,7 @@ function standardizePlotEvent(event: any): Event {
         organizer: {
             name: venue,
         },
+        url: permalink,
     };
 }
 

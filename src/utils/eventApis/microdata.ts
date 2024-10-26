@@ -13,13 +13,19 @@ export async function fetchMicrodataEvents(org: Organization, endSearchDate: Dat
             const eventName = $(element).find('.event-object-title a[itemprop="name"] span').text().trim();
             const eventDate = $(element).find('meta[itemprop="startDate"]').attr('content');
             const eventLocation = $(element).find('a[itemprop="name"]').last().text().trim();
+            
+            const eventLink = $(element).find('.event-object-title a[itemprop="name"]').attr('href');
+            let fullEventLink;
+            if(eventLink)
+                fullEventLink = new URL(eventLink, new URL(org.api)).href;
 
             events.push({
                 name: eventName,
                 startDate: eventDate + "Z", // "Z" forces dates to be treated as UTC
                 organizer: {
                     name: eventLocation || org.name,
-                }
+                },
+                url: fullEventLink,
             });
         }); 
 

@@ -1,11 +1,12 @@
 
 export type Event = {
-    name: string,
-    startDate: ISODate | ISODatetime,
-    endDate?: ISODate | ISODatetime,
+    name: string;
+    startDate: ISODate | ISODatetime;
+    endDate?: ISODate | ISODatetime;
     organizer?: {
-        name: string,
-    },
+        name: string;
+    };
+    url?: string;
 };
 
 export type Organization = {
@@ -14,6 +15,7 @@ export type Organization = {
     api: string,
     jsonLdLinkBlockList?: string[];
     jsonLdEventLinkMustInclude?: string;
+    eventPageUrl?: string;
 };
 
 type ISODate = string; // Expected format: YYYY-MM-DD
