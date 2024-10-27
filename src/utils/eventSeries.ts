@@ -34,11 +34,13 @@ function mapFrequency(frequency: string) {
 function createRRule(eventSchedule: EventSchedule) {
     const frequency = mapFrequency(eventSchedule.frequency);
     const byDay = mapDays(eventSchedule.byDay);
+    const currentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;  // Detect timezone
 
     const ruleOptions: any = {
         freq: frequency,
         dtstart: new Date(eventSchedule.startDate),
-        until: new Date(eventSchedule.endDate)
+        until: new Date(eventSchedule.endDate),
+        tzid: currentTimeZone,
     };
 
     if (eventSchedule.frequency === 'Weekly') {
@@ -63,6 +65,27 @@ function createRRule(eventSchedule: EventSchedule) {
 
 
 export function getEventSeriesStartDates(eventSchedule: EventSchedule, startDate: Date, endDate: Date): Date[] {
+    // javascript stores dates in UTC but rrule assumes local timezone, so dates must be shift to UTC before applying rule and then shifted back after
+    eventSchedule.startDate = applyTimezoneOffset(new Date(eventSchedule.startDate)).toUTCString();
     const rule = createRRule(eventSchedule);
-    return rule.between(startDate, endDate, true);
+    let startDates = rule.between(startDate, endDate, true);
+    return startDates.map(reverseApplyTimezoneOffset);
+}
+
+function applyTimezoneOffset(date: Date): Date {
+    // Get the timezone offset in minutes
+    const offsetMinutes = date.getTimezoneOffset();
+
+    // Calculate the offset in milliseconds and adjust the date
+    const offsetMilliseconds = offsetMinutes * 60 * 1000;
+    return new Date(date.getTime() - offsetMilliseconds);
+}
+
+function reverseApplyTimezoneOffset(date: Date): Date {
+    // Get the timezone offset in minutes
+    const offsetMinutes = date.getTimezoneOffset();
+
+    // Calculate the offset in milliseconds and adjust the date
+    const offsetMilliseconds = offsetMinutes * 60 * 1000;
+    return new Date(date.getTime() + offsetMilliseconds);
 }
