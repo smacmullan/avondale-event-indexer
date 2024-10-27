@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
 import { Organization, Event } from '../../definitions.js';
+import { getEventSeriesStartDates } from '../eventSeries.js';
 dotenv.config();
 
 /*
@@ -29,11 +30,11 @@ export async function fetchGoogleSheetEvents(org: Organization, endSearchDate: D
         // get event data from spreadsheet
         const sheetId = org.api;
         let rows = await getSheetData(sheetId);
-        if(!rows || rows.length < 2)
+        if (!rows || rows.length < 2)
             return [];
 
         rows.shift(); // drop header row
-        let events = rows.map(rowToEvent);
+        let events = getEventsFromRows(rows, endSearchDate);
 
         // Filter out events outside time range
         let today = new Date();
@@ -70,7 +71,7 @@ function sheetStringtoDate(dateStr: string, allDay = false) {
     let [datePart, timePart] = dateStr.split(' ');
     let [month, day, year] = datePart.split('/').map(Number);
 
-    if (!timePart || allDay){
+    if (!timePart || allDay) {
         let monthString = month.toString().padStart(2, '0');
         let dayString = day.toString().padStart(2, '0');
         return `${year}-${monthString}-${dayString}`;
@@ -81,10 +82,22 @@ function sheetStringtoDate(dateStr: string, allDay = false) {
     }
 }
 
+function getEventsFromRows(rows: string[][], endSearchDate: Date): Event[] {
+    let eventData = rows.map((row: any) => rowToEvent(row, endSearchDate));
+    return eventData.flat();
+}
 
-function rowToEvent(row: string[]): Event {
+function rowToEvent(row: string[], endSearchDate: Date): (Event | Event[]) {
+    const isRepeating = (row[10] === "Repeating");
+
+    if (isRepeating)
+        return rowToEventSeries(row, endSearchDate);
+    else
+        return rowToSingleEvent(row);
+}
+
+function rowToSingleEvent(row: string[]): Event {
     const isAllDay = (row[9] === "Yes");
-
     return {
         name: row[2],
         startDate: sheetStringtoDate(row[7], isAllDay) || '',
@@ -94,8 +107,59 @@ function rowToEvent(row: string[]): Event {
         },
         url: row[4] || undefined,
     }
-}
+};
 
+function rowToEventSeries(row: string[], endSearchDate: Date): Event[] {
 
+    const scheduleStartString = row[7];
+    const isAllDay = (row[9] === "Yes");
+    const monthlyOccurenceString = row[13];
+    const scheduleEndString = row[14];
 
+    let schedule = {
+        startDate: sheetStringtoDate(scheduleStartString) as string,
+        endDate: scheduleEndString ? sheetStringtoDate(scheduleEndString) as string : endSearchDate.toISOString(),
+        frequency: row[11],
+        byDay: row[12],
+        monthlyOccurence: monthlyOccurenceString || undefined,
+    };
+    let now = new Date();
+
+    let seriesStartDates = getEventSeriesStartDates(schedule, now, endSearchDate);
+
+    return seriesStartDates.map((startDate: Date) => {
+
+        let startDateString = startDate.toISOString();
+        if(isAllDay)
+            startDateString = startDateString.split('T')[0]; // remove time from end of string
+
+        // logic for figuring out instance end date string
+        const firstInstanceEndDateString = sheetStringtoDate(row[8], isAllDay);
+        let endDateString = undefined;
+        if (!firstInstanceEndDateString)
+            endDateString = undefined;
+        else if (isAllDay)
+            endDateString = startDateString
+        else{
+            // TODO only works when the event starts and ends on the same day
+            // get date from instance start date
+            let dateString = startDateString.split('T')[0];
+            // get time from first instance end time
+            let timeString = firstInstanceEndDateString.split('T')[1];
+            // combine
+            endDateString = `${dateString}T${timeString}`
+        }
+
+        // use instance start and end date to create event
+        return {
+            name: row[2],
+            startDate: startDateString,
+            endDate: endDateString,
+            organizer: {
+                name: row[3],
+            },
+            url: row[4] || undefined,
+        }
+    })
+};
 
