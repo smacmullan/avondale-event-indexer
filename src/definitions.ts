@@ -9,6 +9,14 @@ export type Event = {
     url?: string;
 };
 
+export type EventSchedule = {
+    startDate: string;
+    endDate: string;
+    frequency: string;
+    byDay: string;
+    monthlyOccurence?: string;
+};
+
 export type Organization = {
     name: string,
     eventApiType: string,
