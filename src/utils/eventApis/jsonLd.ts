@@ -55,7 +55,7 @@ async function extractJsonLdEvents(url: string) {
                 }
             }
         });
-        
+
         jsonLdData = jsonLdData.flat();
         const events = jsonLdData.filter(item => item['@type'] && item['@type'].includes("Event"));
         return events;
@@ -75,39 +75,54 @@ async function extractEventLinks(org: Organization): Promise<string[]> {
         const $ = cheerio.load(data);
 
         // Get all event links on the page
-        let baseDir = (new URL(eventHubPageUrl)).pathname;
-        let eventLinks: string[] = [];
+
+        let links: string[] = [];
         $('a').each((i, element) => {
             const link = $(element).attr('href');
-            if (link) {
-                const cleanLink = link.split('?')[0]; //remove query parameters
-                if (cleanLink.startsWith(baseDir)
-                    || cleanLink.startsWith(eventHubPageUrl)
-                    || cleanLink.includes(org.jsonLdEventLinkMustInclude || "event"))
-                    eventLinks.push(cleanLink);
-            }
+            if (link)
+                links.push(link);
         });
 
-        // deduplicate event links
-        eventLinks = Array.from(new Set(eventLinks));
-
-        // Remove the hub link if it shows up on the page
-        eventLinks = eventLinks.filter(link => link !== eventHubPageUrl);
-
-        // Filter out links on block list
-        let blockList = org.jsonLdLinkBlockList;
-        if (blockList) {
-            eventLinks = eventLinks.filter(link =>
-                !blockList.some(toRemove => link.endsWith(toRemove))
-            );
-        }
-
+        let eventLinks = filterLinksforEventLinks(links, org);
         return eventLinks;
 
     } catch (error) {
         console.error(`Error fetching the main event page "${eventHubPageUrl}":`, error);
         return [];
     }
+}
+
+function filterLinksforEventLinks(links: string[], org: Organization): string[] {
+    const eventHubPageUrl = org.api;
+    let baseDir = (new URL(eventHubPageUrl)).pathname;
+
+    // filter for event links
+    let eventLinks: string[] = [];
+    links.forEach((link: string) => {
+        if (link) {
+            const cleanLink = link.split('?')[0]; //remove query parameters
+            if (cleanLink.startsWith(baseDir)
+                || cleanLink.startsWith(eventHubPageUrl)
+                || cleanLink.includes(org.jsonLdEventLinkMustInclude || "event"))
+                eventLinks.push(cleanLink);
+        }
+    });
+
+    // deduplicate event links
+    eventLinks = Array.from(new Set(eventLinks));
+
+    // Remove the hub link if it shows up on the page
+    eventLinks = eventLinks.filter(link => link !== eventHubPageUrl);
+
+    // Filter out links on block list
+    let blockList = org.jsonLdLinkBlockList;
+    if (blockList) {
+        eventLinks = eventLinks.filter(link =>
+            !blockList.some(toRemove => link.endsWith(toRemove))
+        );
+    }
+
+    return eventLinks;
 }
 
 
