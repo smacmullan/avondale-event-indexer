@@ -1,11 +1,16 @@
 import * as cheerio from 'cheerio';
+import puppeteer from 'puppeteer';
 import { decodeHtmlEntities } from '../html.js';
 import { Organization, Event } from '../../definitions.js';
 
 // Function to scrape JSON-LD data from all event pages
 export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
 
-    const eventLinks = await extractEventLinks(org);
+    let eventLinks: string[];
+    if (org.jsonLdHubPageRequiresRendering)
+        eventLinks = await extractEventLinksFromRenderedPage(org);
+    else
+        eventLinks = await extractEventLinksFromHtml(org);
 
     // Concurrently get event data from individual event pages
     let allEventData = [];
@@ -13,10 +18,10 @@ export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date):
         // Create a new URL by appending the subdirectory to the original URL
         const fullUrl = new URL(link, org.api).toString();
         try {
-            const eventData = await extractJsonLdEvents(fullUrl);
+            const eventData = await extractJsonLdEventsFromHtml(fullUrl);
             return eventData;  // Return the extracted data
         } catch (error) {
-            console.log(`Error processing ${fullUrl}:`, error);
+            console.error(`Error processing ${fullUrl}:`, error);
             return null;
         }
     });
@@ -34,7 +39,7 @@ export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date):
 }
 
 
-async function extractJsonLdEvents(url: string) {
+async function extractJsonLdEventsFromHtml(url: string) {
     try {
         const response = await fetch(url);
         const data = await response.text();
@@ -65,8 +70,7 @@ async function extractJsonLdEvents(url: string) {
     }
 }
 
-
-async function extractEventLinks(org: Organization): Promise<string[]> {
+async function extractEventLinksFromHtml(org: Organization): Promise<string[]> {
     const eventHubPageUrl = org.api;
     try {
         // Get and load the html
@@ -75,7 +79,6 @@ async function extractEventLinks(org: Organization): Promise<string[]> {
         const $ = cheerio.load(data);
 
         // Get all event links on the page
-
         let links: string[] = [];
         $('a').each((i, element) => {
             const link = $(element).attr('href');
@@ -91,6 +94,30 @@ async function extractEventLinks(org: Organization): Promise<string[]> {
         return [];
     }
 }
+
+
+async function extractEventLinksFromRenderedPage(org: Organization): Promise<string[]> {
+    const eventHubPageUrl = org.api;
+    try {
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        await page.goto(eventHubPageUrl, { waitUntil: 'networkidle0' });
+
+        // Extract links dynamically rendered on the page
+        const links = await page.evaluate(() => {
+            return Array.from(document.querySelectorAll('a')).map(anchor => anchor.href);
+        });
+
+        await browser.close();
+
+        const eventLinks = filterLinksforEventLinks(links, org);
+        return eventLinks;
+    } catch (error) {
+        console.error(`Error fetching the main event page "${eventHubPageUrl}":`, error);
+        return [];
+    }
+}
+
 
 function filterLinksforEventLinks(links: string[], org: Organization): string[] {
     const eventHubPageUrl = org.api;
