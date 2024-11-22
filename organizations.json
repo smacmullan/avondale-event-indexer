@@ -87,7 +87,8 @@
         "name": "Hairpin Arts Center",
         "eventApiType": "jsonLd",
         "api": "https://www.eventbrite.com/o/hairpin-arts-center-14932154492",
-        "jsonLdEventLinkMustInclude": "/e/"
+        "jsonLdEventLinkMustInclude": "/e/",
+        "jsonLdHubPageRequiresRendering": true
     },
     {
         "name": "Avondale Music Hall",
@@ -103,6 +104,13 @@
         "name": "Elastic Arts",
         "eventApiType": "jsonLd",
         "api": "https://elasticarts.org/events"
+    },
+    {
+        "name": "Rockwell on the River",
+        "eventApiType": "jsonLd",
+        "api": "https://www.eventbrite.com/o/37541482633",
+        "jsonLdEventLinkMustInclude": "/e/",
+        "jsonLdHubPageRequiresRendering": true
     },
     {
         "name": "Avondale Events Form Submissions",

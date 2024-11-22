@@ -23,6 +23,7 @@ export type Organization = {
     api: string,
     jsonLdLinkBlockList?: string[];
     jsonLdEventLinkMustInclude?: string;
+    jsonLdHubPageRequiresRendering?: boolean;
     eventPageUrl?: string;
 };
 
