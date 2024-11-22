@@ -88,7 +88,6 @@ async function extractEventLinksFromHtml(org: Organization): Promise<string[]> {
 
         let eventLinks = filterLinksforEventLinks(links, org);
         return eventLinks;
-
     } catch (error) {
         console.error(`Error fetching the main event page "${eventHubPageUrl}":`, error);
         return [];
@@ -128,10 +127,17 @@ function filterLinksforEventLinks(links: string[], org: Organization): string[] 
     links.forEach((link: string) => {
         if (link) {
             const cleanLink = link.split('?')[0]; //remove query parameters
-            if (cleanLink.startsWith(baseDir)
-                || cleanLink.startsWith(eventHubPageUrl)
-                || cleanLink.includes(org.jsonLdEventLinkMustInclude || "event"))
-                eventLinks.push(cleanLink);
+
+            if (org.jsonLdEventLinkMustInclude) {
+                if (cleanLink.includes(org.jsonLdEventLinkMustInclude))
+                    eventLinks.push(cleanLink);
+            }
+            else {
+                if (cleanLink.startsWith(baseDir)
+                    || cleanLink.startsWith(eventHubPageUrl)
+                    || cleanLink.includes("event"))
+                    eventLinks.push(cleanLink);
+            }
         }
     });
 
