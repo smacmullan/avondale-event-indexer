@@ -53,7 +53,9 @@ export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date):
     let today = new Date();
     const filteredEventData = allEventData.filter(event => event.startDate && new Date(event.startDate) > today && new Date(event.startDate) < endSearchDate);
 
-    return filteredEventData.map(event => standardizeJsonLdEvent(event, org));
+    let events = filteredEventData.map(event => standardizeJsonLdEvent(event, org))
+    events = deduplicateEvents(events);
+    return events;
 }
 
 
@@ -226,4 +228,16 @@ function standardizeJsonLdEvent(event: any, org: Organization): Event {
         },
         url,
     };
+}
+
+function deduplicateEvents(events: Event[]) {
+    const uniqueEvents = [
+        ...new Map(
+            events.map(event => [
+                `${event.name}|${new Date(event.startDate).getTime()}`, // Unique key on name and start time
+                event
+            ])
+        ).values()
+    ];
+    return uniqueEvents;
 }

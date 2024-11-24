@@ -24,11 +24,11 @@ export function printEventList(events: Event[], filePath = "output/eventList.md"
             textOutput += `\n\n## ${eventDay}\n`;
         }
 
-        const organizationName = event.organizer?.name || "Unknown";
+        const organizationName = event.organizer?.name || "";
 
         // Format the event summary
         const timeRange = formatTimeRange(event);
-        textOutput += `* **${timeRange}**   ${event.name} | ${organizationName}\n`;
+        textOutput += `* **${timeRange}**   ${event.name} ${organizationName ? `| ${organizationName}` : ""}\n`;
     });
 
     try {
@@ -57,10 +57,11 @@ function cleanupEvents(events: Event[]) {
         renamePatterns.forEach(pattern => {
             const index = eventName.indexOf(pattern);
             if (index !== -1) {
-                const oldName = eventName;
-                eventName = eventName.substring(0, index).trim();
+                const originalName = eventName;
+                eventName = originalName.substring(0, index).trim();
+                let trimmedText = originalName.substring(index);
                 event.name = eventName;
-                console.log(`"${oldName}" renamed to "${eventName}"`);
+                console.log(`Trimmed "${trimmedText}" from "${originalName}"`);
             }
         });
 
