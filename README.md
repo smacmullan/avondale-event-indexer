@@ -93,7 +93,13 @@ To use this API, provide a URL for a central event page. The interface works as 
 2. De-duplicate the list of URLs to obtain a unique list.
 3. Go to each URL and check for JSON LD event data. If present, grab the data.
 
-This API also has a `jsonLdLinkBlockList` option. This can be used to specify a list of URLs to avoid checking (sometimes sites will link to a different view of the same event list and you end retrieving duplicate events).
+This interface also has several associated options that you can enable by specifying values in the organization object:
+* **jsonLdLinkBlockList** (string array) - use to specify a list of URLs to avoid checking (sometimes sites will link to a different view of the same event list and you end up retrieving duplicate events).
+* **jsonLdEventLinkMustInclude** (string) - by default, the interface only grabs links with the same base URL of the homepage or that include "event" in the link text. This overrides the default behavior and only grabs links that include the specified text.
+* **jsonLdHubPageRequiresRendering** (boolean) - by default (false), the interface grabs static HTML served at the provided API URL ("hub page"). Some webpages have their event links dynamically loaded, which requires the page to render to grab the links. This is more resource intensive.
+* **jsonLdEventPagesRequiresRendering** (boolean) - by default (false), the interface grabs static HTML served at each event link. Some webpages load ther JSON LD data dynamically, which requires the webpage to render. This is more resource intensive.
+
+> **Note:** At the moment, there is no rate limiting for rendering pages. If multiple pages are rendered concurrently it can place significant load on your system.
 
 ## Google Calendar
 This interface allows you to get event data from any public Google calendar. For the API, provide the email address associated with the calendar.

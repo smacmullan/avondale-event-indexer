@@ -24,6 +24,7 @@ export type Organization = {
     jsonLdLinkBlockList?: string[];
     jsonLdEventLinkMustInclude?: string;
     jsonLdHubPageRequiresRendering?: boolean;
+    jsonLdEventPagesRequireRendering?: boolean;
     eventPageUrl?: string;
 };
 
