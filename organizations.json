@@ -113,6 +113,14 @@
         "jsonLdHubPageRequiresRendering": true
     },
     {
+        "name": "Judson & Moore Distillery",
+        "eventApiType": "jsonLd",
+        "api": "https://judsonandmoore.com/pages/events",
+        "jsonLdEventLinkMustInclude": "link",
+        "jsonLdHubPageRequiresRendering": true,
+        "jsonLdEventPagesRequireRendering": true
+    },
+    {
         "name": "Avondale Events Form Submissions",
         "eventApiType": "googleSheet",
         "api": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"

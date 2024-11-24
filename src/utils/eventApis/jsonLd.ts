@@ -14,18 +14,36 @@ export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date):
 
     // Concurrently get event data from individual event pages
     let allEventData = [];
-    const eventExtractPromises = eventLinks.map(async (link) => {
-        // Create a new URL by appending the subdirectory to the original URL
-        const fullUrl = new URL(link, org.api).toString();
-        try {
-            const eventData = await extractJsonLdEventsFromHtml(fullUrl);
-            return eventData;  // Return the extracted data
-        } catch (error) {
-            console.error(`Error processing ${fullUrl}:`, error);
-            return null;
-        }
-    });
-    allEventData = await Promise.all(eventExtractPromises);
+    if (org.jsonLdEventPagesRequireRendering) {
+        // get JSON LD data using puppeteer
+        const browser = await puppeteer.launch();
+        allEventData = await Promise.all(
+            eventLinks.map(async (link) => {
+                try {
+                    return await extractJsonLdEventsFromRenderedPage(browser, link);
+                } catch (error) {
+                    console.error(`Error processing ${link}:`, error);
+                    return null;
+                }
+            })
+        );
+        await browser.close();
+    }
+    else {
+        // get JSON LD data from static HTML with cheerio
+        allEventData = await Promise.all(
+            eventLinks.map(async (link) => {
+                // Create a new URL by appending the subdirectory to the original URL
+                const fullUrl = new URL(link, org.api).toString();
+                try {
+                    return await extractJsonLdEventsFromHtml(fullUrl);
+                } catch (error) {
+                    console.error(`Error processing ${fullUrl}:`, error);
+                    return null;
+                }
+            })
+        );
+    }
 
     // Filter out any null values and flatten sub-arrays into single array
     allEventData = allEventData.filter(eventData => eventData !== null);
@@ -66,6 +84,43 @@ async function extractJsonLdEventsFromHtml(url: string) {
         return events;
     } catch (error) {
         console.error('Error fetching the page:', error);
+        return null;
+    }
+}
+
+async function extractJsonLdEventsFromRenderedPage(browser: puppeteer.Browser, url: string) {
+    try {
+        const page = await browser.newPage();
+        // user agent setting is required to bypass Cloudflare anti-bot measures, will need to be updated in the future
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)')
+        await page.goto(url, { waitUntil: 'networkidle2' });
+
+        // Extract JSON-LD data
+        const jsonLdData = await page.evaluate(() => {
+            const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+            return scripts.map(script => {
+                try {
+                    return JSON.parse(script.textContent || '{}');
+                } catch {
+                    console.error('Error parsing JSON-LD in browser context');
+                    return null;
+                }
+            }).filter(item => item !== null);
+        });
+
+        page.close();
+
+        // Add `url` to JSON-LD data if missing
+        jsonLdData.forEach((item: any) => {
+            if (item && !item.url) {
+                item.url = url;
+            }
+        });
+
+        const events = jsonLdData.filter((item: any) => item['@type'] && item['@type'].includes('Event'));
+        return events;
+    } catch (error) {
+        console.error('Error fetching the event page data with Puppeteer:', error);
         return null;
     }
 }
