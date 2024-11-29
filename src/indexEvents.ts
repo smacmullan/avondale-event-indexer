@@ -9,6 +9,7 @@ import { fetchWebCalEvents } from './utils/eventApis/webcal.js';
 import { fetchMicrodataEvents } from './utils/eventApis/microdata.js';
 import { fetchGoogleSheetEvents } from './utils/eventApis/googleSheet.js';
 import { Event, Organization } from './definitions.js';
+import { fetchWixEvents } from './utils/eventApis/wix.js';
 
 
 async function fetchEvents(org: Organization): Promise<Event[]> {
@@ -28,6 +29,8 @@ async function fetchEvents(org: Organization): Promise<Event[]> {
             return await fetchWebCalEvents(org, endSearchDate);
         case 'microdata':
             return await fetchMicrodataEvents(org, endSearchDate);
+        case 'wix':
+            return await fetchWixEvents(org, endSearchDate);
         case 'eventsCalendarCo':
             return await fetchEventsCalendarCoEvents(org, endSearchDate);
         default:
