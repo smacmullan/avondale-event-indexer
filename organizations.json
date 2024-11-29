@@ -113,12 +113,24 @@
         "jsonLdHubPageRequiresRendering": true
     },
     {
+        "name": "Guild Row",
+        "eventApiType": "jsonLd",
+        "api": "https://www.eventbrite.com/o/guild-row-82425627613",
+        "jsonLdEventLinkMustInclude": "/e/",
+        "jsonLdHubPageRequiresRendering": true
+    },
+    {
         "name": "Judson & Moore Distillery",
         "eventApiType": "jsonLd",
         "api": "https://judsonandmoore.com/pages/events",
         "jsonLdEventLinkMustInclude": "link",
         "jsonLdHubPageRequiresRendering": true,
         "jsonLdEventPagesRequireRendering": true
+    },
+    {
+        "name": "Central Park Bar",
+        "eventApiType": "wix",
+        "api": "https://www.centralparkbarchicago.com"
     },
     {
         "name": "Avondale Events Form Submissions",
