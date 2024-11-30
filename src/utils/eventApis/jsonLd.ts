@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
 import { decodeHtmlEntities } from '../html.js';
 import { Organization, Event } from '../../definitions.js';
+import { isEventUpcomingAndBeforeDate } from '../time.js';
 
 // Function to scrape JSON-LD data from all event pages
 export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
@@ -49,11 +50,9 @@ export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date):
     allEventData = allEventData.filter(eventData => eventData !== null);
     allEventData = allEventData.flat();
 
-    // Filter out events outside time range
-    let today = new Date();
-    const filteredEventData = allEventData.filter(event => event.startDate && new Date(event.startDate) > today && new Date(event.startDate) < endSearchDate);
 
-    let events = filteredEventData.map(event => standardizeJsonLdEvent(event, org))
+    let events = allEventData.map(event => standardizeJsonLdEvent(event, org));
+    events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     events = deduplicateEvents(events);
     return events;
 }

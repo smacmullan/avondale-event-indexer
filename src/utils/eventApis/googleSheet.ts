@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import dotenv from 'dotenv';
 import { Organization, Event } from '../../definitions.js';
 import { getEventSeriesStartDates } from '../eventSeries.js';
+import { isEventUpcomingAndBeforeDate } from '../time.js';
 dotenv.config();
 
 /*
@@ -35,11 +36,7 @@ export async function fetchGoogleSheetEvents(org: Organization, endSearchDate: D
 
         rows.shift(); // drop header row
         let events = getEventsFromRows(rows, endSearchDate);
-
-        // Filter out events outside time range
-        let today = new Date();
-        events = events.filter(event => event.startDate && new Date(event.startDate) > today && new Date(event.startDate) < endSearchDate);
-
+        events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
         return events;
     } catch (error) {
         console.error(`Error fetching Google sheet events.`, error);

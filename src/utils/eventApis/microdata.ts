@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { Organization, Event } from '../../definitions.js';
+import { isEventUpcomingAndBeforeDate } from '../time.js';
 
 export async function fetchMicrodataEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
@@ -29,10 +30,7 @@ export async function fetchMicrodataEvents(org: Organization, endSearchDate: Dat
             });
         }); 
 
-        // filter events by date
-        let today = new Date();
-        let filteredEvents = events.filter(event => event.startDate && new Date(event.startDate) > today && new Date(event.startDate) < endSearchDate);
-
+        let filteredEvents = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
         return filteredEvents;
     } catch (error) {
         console.error(`Error fetching events for ${org.name}.`, error);

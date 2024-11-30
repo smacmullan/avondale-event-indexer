@@ -3,7 +3,7 @@ import { Organization, Event } from '../../definitions.js';
 export async function fetchEventsCalendarCoEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         // put dates into Unix timestamp format
-        const today = new Date().getTime();
+        const today = new Date().setHours(0, 0, 0, 0); // today at 00:00 
         const endDate = endSearchDate.getTime();
 
         let apiString = `https://${org.api}&from=${today}&to=${endDate}`;

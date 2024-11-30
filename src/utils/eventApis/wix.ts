@@ -1,12 +1,12 @@
 import { Organization, Event } from '../../definitions.js';
 import puppeteer from 'puppeteer';
-import { isUpcomingEventBeforeTime } from '../time.js';
+import { isEventUpcomingAndBeforeDate } from '../time.js';
 
 export async function fetchWixEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         let wixEvents = await getWixEventJsonFromApi(org.api);
         let events: Event[] = wixEvents.map((event: any) => standardizeWixEvent(event, org))
-        events = events.filter((event) => isUpcomingEventBeforeTime(event, endSearchDate));
+        events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
         return events;
     } catch (error) {
         console.error(`Error fetching Wix calendar events for ${org.name}.`, error);

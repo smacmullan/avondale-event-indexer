@@ -1,35 +1,23 @@
 import ical from 'ical';
 import { decodeHtmlEntities } from '../html.js';
 import { Organization, Event } from '../../definitions.js';
+import { isEventUpcomingAndBeforeDate } from '../time.js';
 
 export async function fetchWebCalEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         const response = await fetch(org.api);
         const data = await response.text();
         let calendarData = ical.parseICS(data);
+        let webCalEvents = Object.values(calendarData);
 
-        let events = filterEvents(calendarData, endSearchDate);
-        return events.map(event => standardizeWebCalEvent(event, org));
+        let events = webCalEvents.map(event => standardizeWebCalEvent(event, org));
+        events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
+        return events;
     } catch (error) {
         console.error(`Error fetching calendar events for ${org.name}.`, error);
         return [];
     }
 }
-
-function filterEvents(data: ical.FullCalendar, endDate: Date) {
-    const today = new Date();
-    const events = Object.values(data).filter((event: any )=> {
-        if (event.type === 'VEVENT') {
-            const eventStart = new Date(event.start);
-            // const eventEnd = new Date(event.end);
-            return eventStart >= today && (!endDate || eventStart <= endDate);
-        }
-        return false;
-    });
-
-    return events;
-}
-
 
 function standardizeWebCalEvent(event: any, org: Organization): Event {
     return {
