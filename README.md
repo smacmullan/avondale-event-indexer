@@ -82,6 +82,8 @@ This library supports indexing event data from the following sources:
 * WebCal
 * Microdata
 * Events Calendar Co
+* Wix
+* Book Manager
 
 JSON LD is the preferred method for an organization/business to host their event data. JSON LD is a web standard that will be indexed by other event search tools (e.g., Google Search). 
 
@@ -123,3 +125,9 @@ Microdata is a less common structured data format. For the API, provide the webp
 
 ## Events Calendar Co
 This is a plugin used by some businesses for their calendar display. Use browser developer tools to find the API that the webpage is fetching its data from.
+
+## Wix
+This grabs data from a business' Wix website using the Wix calendar widget.
+
+## Book Manager
+This is a tool used by some bookstores. For the `api` value, you need to provide the bookstore's "webstore name". You can find this by opening a browser developer console and looking at POST requests made from the bookstore's events page. `webstore_name` will be in the payload for the **getSettings** request.

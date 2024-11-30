@@ -10,10 +10,11 @@ import { fetchMicrodataEvents } from './utils/eventApis/microdata.js';
 import { fetchGoogleSheetEvents } from './utils/eventApis/googleSheet.js';
 import { Event, Organization } from './definitions.js';
 import { fetchWixEvents } from './utils/eventApis/wix.js';
+import { fetchBookManagerEvents } from './utils/eventApis/bookManager.js';
 
 
-async function fetchEvents(org: Organization): Promise<Event[]> {
-    const endSearchDate = getEndOfWeek(2);
+export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Event[]> {
+    const endSearchDate = getEndOfWeek(weeksOut);
     switch (org.eventApiType) {
         case 'jsonLd':
             return await fetchJsonLdEvents(org, endSearchDate);
@@ -31,6 +32,8 @@ async function fetchEvents(org: Organization): Promise<Event[]> {
             return await fetchMicrodataEvents(org, endSearchDate);
         case 'wix':
             return await fetchWixEvents(org, endSearchDate);
+        case 'bookManager':
+            return await fetchBookManagerEvents(org, endSearchDate);
         case 'eventsCalendarCo':
             return await fetchEventsCalendarCoEvents(org, endSearchDate);
         default:
