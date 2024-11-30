@@ -133,6 +133,11 @@
         "api": "https://www.centralparkbarchicago.com"
     },
     {
+        "name": "Skunk Cabbage Books",
+        "eventApiType": "bookManager",
+        "api": "9932593"
+    },
+    {
         "name": "Avondale Events Form Submissions",
         "eventApiType": "googleSheet",
         "api": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"
