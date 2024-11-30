@@ -1,17 +1,16 @@
 import { Organization, Event } from '../../definitions.js';
+import { isEventUpcomingAndBeforeDate } from '../time.js';
 
 export async function fetchDo312Events(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         // fetch event data
         let response = await fetch(org.api);
         let data = await response.json()
-        let events = data.event_groups.flatMap((group: any) => group.events);
+        let do312Events = data.event_groups.flatMap((group: any) => group.events);
 
-        // Filter out events outside time range
-        let today = new Date();
-        events = events.filter((event: any) => event.begin_time && new Date(event.begin_time) > today && new Date(event.begin_time) < endSearchDate);
-
-        return events.map(standardizeDo312Event);
+        let events: Event[] = do312Events.map(standardizeDo312Event);
+        events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
+        return events;
     } catch (error) {
         console.error(`Error fetching events for ${org.name}.`, error);
         return [];

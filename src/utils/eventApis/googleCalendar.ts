@@ -9,9 +9,10 @@ export async function fetchGoogleCalendarEvents(org: Organization, endSearchDate
         const calendarId = org.api;
 
         // Fetch events from the calendar
+        const today = new Date(new Date().setHours(0, 0, 0, 0)); // today at 00:00 
         const response = await calendar.events.list({
             calendarId: calendarId,
-            timeMin: (new Date()).toISOString(), // Start time (current date/time)
+            timeMin: today.toISOString(), // Start time (current date/time)
             timeMax: endSearchDate.toISOString(),
             maxResults: 20,
             singleEvents: true,

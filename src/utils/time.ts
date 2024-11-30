@@ -111,16 +111,26 @@ export function eventSort(a: Event, b: Event) {
 /**
 * Determines if event occurs between current moment and end date.
 */
-export function isUpcomingEventBeforeTime(event: Event, end: Date): boolean {
+export function isEventUpcomingAndBeforeDate(event: Event, end: Date): boolean {
     const today = new Date();
     return isEventInTimeRange(event, today, end);
 }
 
 export function isEventInTimeRange(event: Event, start: Date, end: Date): boolean {
-    if(event.endDate){
+    if (event.endDate && isEventDurationLessThanAWeek(event)) {
         // include events with end date after "start" to include in-progress events
         return (new Date(event.endDate) > start && new Date(event.startDate) < end);
     } else {
         return (new Date(event.startDate) > start && new Date(event.startDate) < end);
     }
+}
+
+/**
+* Useful for filtering out event series
+*/
+function isEventDurationLessThanAWeek(event: Event): boolean {
+    if (event.endDate)
+        return ((new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) < 7 * 24 * 60 * 60 * 1000);
+    else
+        return true;
 }
