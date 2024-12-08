@@ -138,6 +138,11 @@
         "api": "9932593"
     },
     {
+        "name": "Logandale School",
+        "eventApiType": "chicagoPublicSchools",
+        "api": "Logandale"
+    },
+    {
         "name": "Avondale Events Form Submissions",
         "eventApiType": "googleSheet",
         "api": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"

@@ -11,6 +11,7 @@ import { fetchGoogleSheetEvents } from './utils/eventApis/googleSheet.js';
 import { Event, Organization } from './definitions.js';
 import { fetchWixEvents } from './utils/eventApis/wix.js';
 import { fetchBookManagerEvents } from './utils/eventApis/bookManager.js';
+import { fetchCpsEvents } from './utils/eventApis/chicagoPublicSchools.js';
 
 
 export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Event[]> {
@@ -36,6 +37,8 @@ export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Even
             return await fetchBookManagerEvents(org, endSearchDate);
         case 'eventsCalendarCo':
             return await fetchEventsCalendarCoEvents(org, endSearchDate);
+        case 'chicagoPublicSchools':
+            return await fetchCpsEvents(org, endSearchDate);
         default:
             console.log(`No matching API format found for "${org.eventApiType}" at ${org.name}`)
             return [];
