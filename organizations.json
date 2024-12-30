@@ -143,6 +143,12 @@
         "api": "Logandale"
     },
     {
+        "name": "Oracle + Alchemy",
+        "eventApiType": "offeringTree",
+        "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
+        "api": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=0f3fedcb-a7cb-43a2-80bf-4774959f9561"
+    },
+    {
         "name": "Avondale Events Form Submissions",
         "eventApiType": "googleSheet",
         "api": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"
