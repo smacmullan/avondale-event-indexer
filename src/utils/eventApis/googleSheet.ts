@@ -85,7 +85,7 @@ function getEventsFromRows(rows: string[][], endSearchDate: Date): Event[] {
 }
 
 function rowToEvent(row: string[], endSearchDate: Date): (Event | Event[]) {
-    const isRepeating = (row[10] === "Repeating");
+    const isRepeating = (row[10]?.trim() === "Repeating");
 
     if (isRepeating)
         return rowToEventSeries(row, endSearchDate);
@@ -94,7 +94,7 @@ function rowToEvent(row: string[], endSearchDate: Date): (Event | Event[]) {
 }
 
 function rowToSingleEvent(row: string[]): Event {
-    const isAllDay = (row[9] === "Yes");
+    const isAllDay = (row[9]?.trim() === "Yes");
     return {
         name: row[2],
         startDate: sheetStringtoDate(row[7], isAllDay) || '',
