@@ -4,7 +4,7 @@ import { isEventUpcomingAndBeforeDate } from '../time.js';
 export async function fetchOfferingTreeEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
         const today = new Date(new Date().setHours(0, 0, 0, 0)); // today at 00:00 
-        let apiString = `${org.api}&start_date_time=${today.toISOString()}`;
+        let apiString = `${org.api}&start_date_time=${today.toISOString()}&num_events=100`;
         let response = await fetch(apiString);
 
         let offeringTreeEvents = await response.json();
