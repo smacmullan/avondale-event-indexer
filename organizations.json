@@ -172,6 +172,12 @@
         "api": "https://uprisingtheaterchicago.com/events"
     },
     {
+        "name": "Chicago Police CAPS Meetings",
+        "eventApiType": "cpdCaps",
+        "eventPageUrl": "https://www.chicagopolice.org/community-engagement-calendar/",
+        "api": "1411,1412,1732,1733,2523"
+    },
+    {
         "name": "Avondale Events Form Submissions",
         "eventApiType": "googleSheet",
         "api": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"
