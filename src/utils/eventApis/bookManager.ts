@@ -67,11 +67,22 @@ async function getSessionId(storeId: string): Promise<string> {
 function standardizeBookManagerEvent(event: any, org: Organization, baseUrl?: string): Event {
     return {
         name: event.info.name,
-        startDate: new Date(event.from * 1000).toISOString(),
-        endDate: new Date(event.to * 1000).toISOString(),
+        startDate: convertUnixTimestampToIsoString(event.from),
+        endDate: convertUnixTimestampToIsoString(event.to),
         organizer: {
             name: org.name,
         },
-        url: baseUrl? `${baseUrl}/events/${event.id}` : undefined,
+        url: baseUrl ? `${baseUrl}/events/${event.id}` : undefined,
     };
+}
+
+function convertUnixTimestampToIsoString(timestamp: number): string {
+    // bookManager Unix timestamps are, for unknown reasons, two hours ahead of the actual event time
+    const twoHours = 2 * 60 * 60;
+    let roundedTimestamp = roundDownToNearestMinute(timestamp);
+    return new Date((roundedTimestamp - twoHours) * 1000).toISOString();
+}
+
+function roundDownToNearestMinute(timestamp: number): number {
+    return Math.floor(timestamp / 60) * 60;
 }
