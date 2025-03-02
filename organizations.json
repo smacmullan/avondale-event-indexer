@@ -85,10 +85,9 @@
     },
     {
         "name": "Hairpin Arts Center",
-        "eventApiType": "jsonLd",
-        "api": "https://www.eventbrite.com/o/hairpin-arts-center-14932154492",
-        "jsonLdEventLinkMustInclude": "/e/",
-        "jsonLdHubPageRequiresRendering": true
+        "eventApiType": "elfSight",
+        "api": "https://core.service.elfsight.com/p/boot/?page=https%3A%2F%2Fwww.hairpinartscenter.org%2Fevents&w=6de8e8b2-a4f5-4a92-82c3-534dcdbc25c6",
+        "eventPageUrl": "https://www.hairpinartscenter.org/events"
     },
     {
         "name": "Avondale Music Hall",
