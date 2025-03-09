@@ -95,9 +95,10 @@
         "api": "https://do312.com/venues/avondale-music-hall.json"
     },
     {
-        "name": "Kitchen 17/The Fallen Log",
-        "eventApiType": "do312",
-        "api": "https://do312.com/venues/kitchen-17.json"
+        "name": "Kitchen 17",
+        "eventApiType": "googleCalendar",
+        "api": "c_981d53d52753f136f53b82fcbfeaec5d081c59de0c862d18bb1a036f4736da8e@group.calendar.google.com",
+        "eventPageUrl": "https://kitchen17.com/events/"
     },
     {
         "name": "Elastic Arts",

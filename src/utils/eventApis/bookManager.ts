@@ -42,7 +42,7 @@ async function getBookManagerEventsFromApi(storeId: string) {
         redirect: "follow"
     };
 
-    const response = await fetch("https://api.bookmanager.com/customer/event/getList", requestOptions);
+    const response = await fetch("https://api.bookmanager.com/customer/event/v2/list", requestOptions);
     const data = await response.json();
     return data.rows;
 }
@@ -66,9 +66,9 @@ async function getSessionId(storeId: string): Promise<string> {
 
 function standardizeBookManagerEvent(event: any, org: Organization, baseUrl?: string): Event {
     return {
-        name: event.info.name,
-        startDate: convertUnixTimestampToIsoString(event.from),
-        endDate: convertUnixTimestampToIsoString(event.to),
+        name: event.title,
+        startDate: convertBookManagerDateTimestampToIsoString(event.date, event.start_time),
+        endDate: convertBookManagerDateTimestampToIsoString(event.date, event.end_time),
         organizer: {
             name: org.name,
         },
@@ -76,6 +76,16 @@ function standardizeBookManagerEvent(event: any, org: Organization, baseUrl?: st
     };
 }
 
+function convertBookManagerDateTimestampToIsoString(date: string, time: string): string {
+    // Construct a local Date object
+    const localDateTime = new Date(
+        `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}T${time}`
+    );
+
+    return localDateTime.toISOString();
+}
+
+// Not used as of API V2
 function convertUnixTimestampToIsoString(timestamp: number): string {
     // bookManager Unix timestamps are, for unknown reasons, two hours ahead of the actual event time
     const twoHours = 2 * 60 * 60;
