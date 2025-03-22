@@ -25,6 +25,7 @@ export type Organization = {
     jsonLdEventLinkMustInclude?: string;
     jsonLdHubPageRequiresRendering?: boolean;
     jsonLdEventPagesRequireRendering?: boolean;
+    googleCalendarUseLocation?: boolean;
     eventPageUrl?: string;
 };
 

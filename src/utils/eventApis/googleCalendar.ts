@@ -28,12 +28,20 @@ export async function fetchGoogleCalendarEvents(org: Organization, endSearchDate
 }
 
 function standardizeGoogleEvent(event: any, org: Organization): Event {
+
+    let organizationName = org.name;
+    if (org.googleCalendarUseLocation && event.location){
+        // append location to organization name
+        let location = event.location.split(/,|-/)[0].trim(); // trim end off location
+        organizationName = `${org.name} @ ${location}`;
+    }
+
     return {
         name: event.summary,
         startDate: event.start.dateTime || event.start.date || undefined,
         endDate: event.end.dateTime || event.end.date || undefined,
         organizer: {
-            name: org.name,
+            name: organizationName,
         },
         url: org.eventPageUrl,
     };
