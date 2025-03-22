@@ -53,7 +53,7 @@ export function formatDay(event: Event) {
     return new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'numeric', day: 'numeric' }).format(date);
 }
 
-function getDateFromISODate(str: string) {
+export function getDateFromISODate(str: string) {
     // Create a new Date object using the local timezone
     let [year, month, day] = str.split('-');
     return new Date(+year, +month - 1, +day); // Month is 0-indexed
@@ -81,7 +81,7 @@ export function getEndOfWeek(weeksOut = 0) {
 }
 
 
-function isISODate(str: string) {
+export function isISODate(str: string) {
     // Regular expression for ISO Date format (YYYY-MM-DD)
     const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
     return isoDateRegex.test(str);
