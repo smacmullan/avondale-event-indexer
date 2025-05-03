@@ -32,16 +32,17 @@ function standardizePlotEvent(event: any): Event {
 
 function parseDateFromPlotDateTime(dateTime: string) {
     // Extract the components of the dateTime string using regex
-    const match = dateTime.match(/\w{3}, (\w{3}) (\d{1,2}) (\d{1,2}:\d{2})(AM|PM)/);
+    const match = dateTime.match(/\w{3}, (\w{3}) (\d{1,2}) (\d{1,2}:\d{2}|\d{1,2})(am|pm)/i);
     if(!match) return "";
     const [_, month, day, time, meridian] = match;
     // Map the month abbreviation to the corresponding numeric value
     const monthMap = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
     // Parse the hour and minute from the time string
     let [hours, minutes] = time.split(':').map(Number);
+    if (!minutes) minutes = 0; // Default to 0 if minutes are not provided
     // Convert the 12-hour format to 24-hour format based on AM/PM
-    if (meridian === 'PM' && hours !== 12) hours += 12;
-    if (meridian === 'AM' && hours === 12) hours = 0;
+    if (meridian === 'pm' && hours !== 12) hours += 12;
+    if (meridian === 'am' && hours === 12) hours = 0;
 
     // Calculate the year (not provided in parsed information)
     const today = new Date();

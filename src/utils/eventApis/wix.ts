@@ -3,6 +3,7 @@ import puppeteer from 'puppeteer';
 import { isEventUpcomingAndBeforeDate } from '../time.js';
 
 export async function fetchWixEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
+    // broken as of latest change to Wix API
     try {
         let wixEvents = await getWixEventJsonFromApi(org.api);
         let events: Event[] = wixEvents.map((event: any) => standardizeWixEvent(event, org))

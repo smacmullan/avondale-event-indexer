@@ -16,19 +16,24 @@ export function printEventList(events: Event[], filePath = "output/eventList.md"
     let currentDay = '';
     let textOutput = '';
     events.forEach(event => {
-        const eventDay = formatDay(event);
+        try {
+            const eventDay = formatDay(event);
 
-        // Print the day only once per group of events
-        if (eventDay !== currentDay) {
-            currentDay = eventDay;
-            textOutput += `\n\n## ${eventDay}\n`;
+            // Print the day only once per group of events
+            if (eventDay !== currentDay) {
+                currentDay = eventDay;
+                textOutput += `\n\n## ${eventDay}\n`;
+            }
+
+            const organizationName = event.organizer?.name || "";
+
+            // Format the event summary
+            const timeRange = formatTimeRange(event);
+            textOutput += `* **${timeRange}**   ${event.name} ${organizationName ? `| ${organizationName}` : ""}\n`;
         }
-
-        const organizationName = event.organizer?.name || "";
-
-        // Format the event summary
-        const timeRange = formatTimeRange(event);
-        textOutput += `* **${timeRange}**   ${event.name} ${organizationName ? `| ${organizationName}` : ""}\n`;
+        catch (err) {
+            console.error('Error formatting event', event);
+        }
     });
 
     try {
