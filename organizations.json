@@ -129,11 +129,6 @@
         "jsonLdEventPagesRequireRendering": true
     },
     {
-        "name": "Central Park Bar",
-        "eventApiType": "wix",
-        "api": "https://www.centralparkbarchicago.com"
-    },
-    {
         "name": "Skunk Cabbage Books",
         "eventApiType": "bookManager",
         "api": "9932593"
