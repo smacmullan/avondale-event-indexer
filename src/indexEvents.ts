@@ -15,6 +15,7 @@ import { fetchCpsEvents } from './utils/eventApis/chicagoPublicSchools.js';
 import { fetchOfferingTreeEvents } from './utils/eventApis/offeringTree.js';
 import { fetchCpdCapsEvents } from './utils/eventApis/cpdCaps.js';
 import { fetchElfSightEvents } from './utils/eventApis/elfSight.js';
+import { fetchChicagoBlockPartyEvents } from './utils/eventApis/chicagoBlockParties.js';
 
 
 export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Event[]> {
@@ -48,6 +49,8 @@ export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Even
             return await fetchCpdCapsEvents(org, endSearchDate);
         case 'elfSight':
             return await fetchElfSightEvents(org, endSearchDate);
+        case 'chicagoBlockParties':
+            return await fetchChicagoBlockPartyEvents(org, endSearchDate);
         default:
             console.log(`No matching API format found for "${org.eventApiType}" at ${org.name}`)
             return [];
