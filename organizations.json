@@ -74,9 +74,19 @@
         "api": "https://www.chicagoparkdistrict.com/parks-facilities/avondale-park"
     },
     {
+        "name": "Kilbourn Park",
+        "eventApiType": "microdata",
+        "api": "https://www.chicagoparkdistrict.com/parks-facilities/kilbourn-park"
+    },
+    {
         "name": "Athletic Field Park",
         "eventApiType": "microdata",
         "api": "https://www.chicagoparkdistrict.com/parks-facilities/athletic-field-park"
+    },
+    {
+        "name": "Athelitc Field Park",
+        "eventApiType": "jsonLd",
+        "api": "https://www.athleticfieldpark.com/community-events"
     },
     {
         "name": "Unity Park",
@@ -177,6 +187,12 @@
         "name": "Avondale Block Parties",
         "eventApiType": "chicagoBlockParties",
         "api": "22"
+    },
+    {
+        "name": "Pumping Station One",
+        "eventApiType": "googleCalendar",
+        "api": "hhlp4gcgvdmifq5lcbk7e27om4@group.calendar.google.com",
+        "eventPageUrl": "https://pumpingstationone.org/events"
     },
     {
         "name": "Avondale Events Form Submissions",

@@ -5,7 +5,7 @@ import { Event } from './definitions.js';
 export function printEventList(events: Event[], filePath = "output/eventList.md") {
 
     events.sort(eventSort);
-    events = cleanupEvents(events);
+    events = cleanupEvents(events, customAvondaleFilter);
 
     try {
         fs.writeFileSync("output/events.json", JSON.stringify(events, null, 2));
@@ -47,13 +47,18 @@ export function printEventList(events: Event[], filePath = "output/eventList.md"
 /**
 * Remove closed events and trim names that include locations.
 */
-function cleanupEvents(events: Event[]) {
+function cleanupEvents(events: Event[], customFilter?: (event: Event) => boolean): Event[] {
     events = events.filter(event => {
         let eventName = event.name as string;
 
         // Remove events with "closed" in the name
         if (!eventName || eventName.toLowerCase().includes('closed')) {
             console.log(`Removed "${event.name}" from the event list`);
+            return false; // Filter out the event
+        }
+
+        if (customFilter && !customFilter(event)) {
+            console.log(`Removed "${event.name} - ${event.organizer?.name}" from the event list`);
             return false; // Filter out the event
         }
 
@@ -74,4 +79,27 @@ function cleanupEvents(events: Event[]) {
     });
 
     return events;
+}
+
+/**
+ * Remove common duplicate events or non-events from the list.
+ */
+function customAvondaleFilter(event: Event): boolean {
+
+    if (eventNameMatch(event, "Two Twenty-Two Tuesday","Kitchen 17"))
+        return false;
+    if (eventNameMatch(event, "Insect Asylum's Cat Jam","Avondale Gardening Alliance @ The Insect Asylum"))
+        return false;
+    if (eventNameMatch(event, "Avondale Neighborhood Association Meeting","Avondale Gardening Alliance"))
+        return false;
+    if (eventNameMatch(event, "Mindful Living Garden work day","Avondale Gardening Alliance @ Mindful Living"))
+        return false;
+    if (eventNameMatch(event, "Insect Asylum Butterfly pinning workshop", "Avondale Gardening Alliance @ The Insect Asylum"))
+        return false;
+
+    return true;
+}
+
+function eventNameMatch(event: Event, name: string, organizationName: string): boolean {
+    return event.name.trim() == name.trim() && event.organizer?.name == organizationName;
 }
