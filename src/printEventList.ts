@@ -96,6 +96,10 @@ function customAvondaleFilter(event: Event): boolean {
         return false;
     if (eventNameMatch(event, "Insect Asylum Butterfly pinning workshop", "Avondale Gardening Alliance @ The Insect Asylum"))
         return false;
+    if (eventNameMatch(event, "Board Meeting @ PS1", "Pumping Station One"))
+        return false;
+    if (eventNameMatch(event, "Board Meeting @ PS1, First Tuesday of the Month", "Pumping Station One"))
+        return false;
 
     return true;
 }

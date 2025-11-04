@@ -24,11 +24,6 @@
         "api": "sleeping-village.com"
     },
     {
-        "name": "Tutore Cooking School",
-        "eventApiType": "jsonLd",
-        "api": "https://www.tutorecookingschool.com/class-schedule"
-    },
-    {
         "name": "Firefly Fiber Arts Studio",
         "eventApiType": "jsonLd",
         "api": "https://www.fireflyfiberarts.com/new-events-1"
@@ -193,6 +188,33 @@
         "eventApiType": "googleCalendar",
         "api": "hhlp4gcgvdmifq5lcbk7e27om4@group.calendar.google.com",
         "eventPageUrl": "https://pumpingstationone.org/events"
+    },
+    {
+        "name": "Honey Butter Fried Chicken",
+        "eventApiType": "jsonLd",
+        "api": "https://www.honeybutter.com/events"
+    },
+    {
+        "name": "Avondale Arts",
+        "eventApiType": "jsonLd",
+        "api": "https://www.eventbrite.com/o/avondale-arts-chicago-89841749603",
+        "jsonLdEventLinkMustInclude": "/e/",
+        "jsonLdHubPageRequiresRendering": true
+    },
+    {
+        "name": "Five Point Holistic Health",
+        "eventApiType": "jsonLd",
+        "api": "https://www.fivepointholistichealth.com/events"
+    },
+    {
+        "name": "Moody's Market",
+        "eventApiType": "jsonLd",
+        "api": "https://www.moodysmarket.com/moodyclasses"
+    },
+    {
+        "name": "Chief O'Neill's",
+        "eventApiType": "popMenu",
+        "api": "https://www.chiefoneillspub.com"
     },
     {
         "name": "Avondale Events Form Submissions",
