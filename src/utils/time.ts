@@ -1,4 +1,4 @@
-import { Event } from "../definitions.js";
+import type { Event } from "../definitions.js";
 
 function formatTime(date: Date, hoursOnly = false) {
     const hours = date.getHours() % 12 || 12;

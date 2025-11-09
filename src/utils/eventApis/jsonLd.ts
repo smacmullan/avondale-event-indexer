@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
-import { decodeHtmlEntities } from '../html.js';
-import { Organization, Event } from '../../definitions.js';
-import { isEventUpcomingAndBeforeDate } from '../time.js';
+import { decodeHtmlEntities } from '../html.ts';
+import type { Organization, Event } from '../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../time.ts';
 
 // Function to scrape JSON-LD data from all event pages
 export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {

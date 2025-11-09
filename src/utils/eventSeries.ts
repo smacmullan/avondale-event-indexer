@@ -1,5 +1,5 @@
 import rrule from 'rrule';
-import { EventSchedule } from '../definitions.js';
+import type { EventSchedule } from '../definitions.ts';
 const { RRule, RRuleSet } = rrule;
 
 // Helper function to map day strings to rrule constants

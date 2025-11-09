@@ -1,5 +1,5 @@
-import { Organization, Event } from '../../definitions.js';
-import { isEventUpcomingAndBeforeDate } from '../time.js';
+import type { Organization, Event } from '../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../time.ts';
 
 export async function fetchBookManagerEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {

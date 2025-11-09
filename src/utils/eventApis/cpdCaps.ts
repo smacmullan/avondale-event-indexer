@@ -1,4 +1,4 @@
-import { Organization, Event } from '../../definitions.js';
+import type { Organization, Event } from '../../definitions.ts';
 import puppeteer from 'puppeteer';
 
 export async function fetchCpdCapsEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {

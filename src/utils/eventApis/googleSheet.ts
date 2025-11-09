@@ -1,8 +1,8 @@
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
-import { Organization, Event } from '../../definitions.js';
-import { getEventSeriesStartDates } from '../eventSeries.js';
-import { isEventUpcomingAndBeforeDate } from '../time.js';
+import type { Organization, Event } from '../../definitions.ts';
+import { getEventSeriesStartDates } from '../eventSeries.ts';
+import { isEventUpcomingAndBeforeDate } from '../time.ts';
 dotenv.config();
 
 /*
