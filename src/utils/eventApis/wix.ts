@@ -1,6 +1,6 @@
-import { Organization, Event } from '../../definitions.js';
+import type { Organization, Event } from '../../definitions.ts';
 import puppeteer from 'puppeteer';
-import { isEventUpcomingAndBeforeDate } from '../time.js';
+import { isEventUpcomingAndBeforeDate } from '../time.ts';
 
 export async function fetchWixEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     // broken as of latest change to Wix API

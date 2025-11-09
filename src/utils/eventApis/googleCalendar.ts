@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
-import { Organization, Event } from '../../definitions.js';
+import type { Organization, Event } from '../../definitions.ts';
 dotenv.config();
 
 export async function fetchGoogleCalendarEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {

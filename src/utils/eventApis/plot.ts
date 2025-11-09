@@ -1,4 +1,4 @@
-import { Organization, Event } from '../../definitions.js';
+import type { Organization, Event } from '../../definitions.ts';
 
 export async function fetchPlotEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {

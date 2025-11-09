@@ -1,6 +1,6 @@
 import fs from 'fs';
-import { formatTimeRange, formatDay, isISODate, getDateFromISODate } from '../src/utils/time.js';
-import { Event } from '../src/definitions.js';
+import { formatTimeRange, formatDay, isISODate, getDateFromISODate } from '../src/utils/time.ts';
+import type { Event } from '../src/definitions.ts';
 
 export function generateNewsletterHtml(filePath = "output/newsletterEvents.html") {
 

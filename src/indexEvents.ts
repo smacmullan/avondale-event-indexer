@@ -1,22 +1,22 @@
 import fs from 'fs';
-import { getEndOfWeek } from './utils/time.js';
-import { fetchJsonLdEvents } from './utils/eventApis/jsonLd.js';
-import { fetchGoogleCalendarEvents } from './utils/eventApis/googleCalendar.js';
-import { fetchPlotEvents } from './utils/eventApis/plot.js';
-import { fetchEventsCalendarCoEvents } from './utils/eventApis/eventsCalendarCo.js';
-import { fetchDo312Events } from './utils/eventApis/do312.js';
-import { fetchWebCalEvents } from './utils/eventApis/webcal.js';
-import { fetchMicrodataEvents } from './utils/eventApis/microdata.js';
-import { fetchGoogleSheetEvents } from './utils/eventApis/googleSheet.js';
-import { Event, Organization } from './definitions.js';
-import { fetchWixEvents } from './utils/eventApis/wix.js';
-import { fetchBookManagerEvents } from './utils/eventApis/bookManager.js';
-import { fetchCpsEvents } from './utils/eventApis/chicagoPublicSchools.js';
-import { fetchOfferingTreeEvents } from './utils/eventApis/offeringTree.js';
-import { fetchCpdCapsEvents } from './utils/eventApis/cpdCaps.js';
-import { fetchElfSightEvents } from './utils/eventApis/elfSight.js';
-import { fetchChicagoBlockPartyEvents } from './utils/eventApis/chicagoBlockParties.js';
-import { fetchPopMenuEvents } from './utils/eventApis/popMenu.js';
+import { getEndOfWeek } from './utils/time.ts';
+import { fetchJsonLdEvents } from './utils/eventApis/jsonLd.ts';
+import { fetchGoogleCalendarEvents } from './utils/eventApis/googleCalendar.ts';
+import { fetchPlotEvents } from './utils/eventApis/plot.ts';
+import { fetchEventsCalendarCoEvents } from './utils/eventApis/eventsCalendarCo.ts';
+import { fetchDo312Events } from './utils/eventApis/do312.ts';
+import { fetchWebCalEvents } from './utils/eventApis/webcal.ts';
+import { fetchMicrodataEvents } from './utils/eventApis/microdata.ts';
+import { fetchGoogleSheetEvents } from './utils/eventApis/googleSheet.ts';
+import type { Event, Organization } from './definitions.ts';
+import { fetchWixEvents } from './utils/eventApis/wix.ts';
+import { fetchBookManagerEvents } from './utils/eventApis/bookManager.ts';
+import { fetchCpsEvents } from './utils/eventApis/chicagoPublicSchools.ts';
+import { fetchOfferingTreeEvents } from './utils/eventApis/offeringTree.ts';
+import { fetchCpdCapsEvents } from './utils/eventApis/cpdCaps.ts';
+import { fetchElfSightEvents } from './utils/eventApis/elfSight.ts';
+import { fetchChicagoBlockPartyEvents } from './utils/eventApis/chicagoBlockParties.ts';
+import { fetchPopMenuEvents } from './utils/eventApis/popMenu.ts';
 
 
 export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Event[]> {

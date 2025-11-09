@@ -1,6 +1,6 @@
 import fs from 'fs';
-import { formatTimeRange, formatDay, eventSort } from './utils/time.js';
-import { Event } from './definitions.js';
+import { formatTimeRange, formatDay, eventSort } from './utils/time.ts';
+import type { Event } from './definitions.ts';
 
 export function printEventList(events: Event[], filePath = "output/eventList.md") {
 
