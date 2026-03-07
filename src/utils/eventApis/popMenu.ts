@@ -52,7 +52,7 @@ function standardizePopMenuEvent(event: any, org: Organization): Event {
 }
 
 function getISODateString(startAtText: string, startTimeUtcSeconds: number): string {
-    let date = new Date(`${startAtText}T00:00:00Z`);
-    date.setUTCSeconds(date.getUTCSeconds() + startTimeUtcSeconds);
+    let date = new Date(`${startAtText}T00:00:00`);
+    date.setSeconds(date.getSeconds() + startTimeUtcSeconds);
     return date.toISOString();
 }

@@ -91,20 +91,13 @@
     },
     {
         "name": "Hairpin Arts Center",
-        "eventApiType": "elfSight",
-        "api": "https://core.service.elfsight.com/p/boot/?page=https%3A%2F%2Fwww.hairpinartscenter.org%2Fevents&w=6de8e8b2-a4f5-4a92-82c3-534dcdbc25c6",
-        "eventPageUrl": "https://www.hairpinartscenter.org/events"
+        "eventApiType": "jsonLd",
+        "api": "https://www.hairpinartscenter.org/calendar"
     },
     {
         "name": "Avondale Music Hall",
         "eventApiType": "do312",
         "api": "https://do312.com/venues/avondale-music-hall.json"
-    },
-    {
-        "name": "Kitchen 17",
-        "eventApiType": "googleCalendar",
-        "api": "c_981d53d52753f136f53b82fcbfeaec5d081c59de0c862d18bb1a036f4736da8e@group.calendar.google.com",
-        "eventPageUrl": "https://kitchen17.com/events/"
     },
     {
         "name": "Elastic Arts",
@@ -170,7 +163,9 @@
     {
         "name": "Uprising Theater",
         "eventApiType": "jsonLd",
-        "api": "https://uprisingtheaterchicago.com/events"
+        "api": "https://www.eventbrite.com/o/uprising-theater-119988594591",
+        "jsonLdEventLinkMustInclude": "/e/",
+        "jsonLdHubPageRequiresRendering": true
     },
     {
         "name": "Chicago Police CAPS Meetings",
@@ -202,6 +197,13 @@
         "jsonLdHubPageRequiresRendering": true
     },
     {
+        "name": "Avondale Mutual Aid",
+        "eventApiType": "jsonLd",
+        "api": "https://www.eventbrite.com/o/118946571131",
+        "jsonLdEventLinkMustInclude": "/e/",
+        "jsonLdHubPageRequiresRendering": true
+    },
+    {
         "name": "Five Point Holistic Health",
         "eventApiType": "jsonLd",
         "api": "https://www.fivepointholistichealth.com/events"
@@ -215,6 +217,42 @@
         "name": "Chief O'Neill's",
         "eventApiType": "popMenu",
         "api": "https://www.chiefoneillspub.com"
+    },
+    {
+        "name": "LoSAH Center of Hope",
+        "eventApiType": "jsonLd",
+        "api": "https://www.losahcenter.org/communitymentalhealthevents",
+        "jsonLdHubPageRequiresRendering": true,
+        "jsonLdEventLinkMustInclude": "/communitymentalhealthevents/"
+    },
+    {
+        "name": "EcoShip",
+        "eventApiType": "googleCalendar",
+        "api": "djrjdo8lttkr78ksvt3c7gnups@group.calendar.google.com",
+        "eventPageUrl": "https://ecoship.org/calendar"
+    },
+    {
+        "name": "Terracotto Plants",
+        "eventApiType": "googleCalendar",
+        "api": "hp2ssoso11hv9dheqt6ap8j970@group.calendar.google.com",
+        "eventPageUrl": "https://www.terracottoplants.com/"
+    },
+    {
+        "name": "Beer Temple",
+        "eventApiType": "googleCalendar",
+        "api": "info@craftbeertemple.com",
+        "eventPageUrl": "https://craftbeertemple.com/events-2"
+    },
+    {
+        "name": "LiveWire Lounge",
+        "eventApiType": "do312",
+        "api": "https://do312.com/venues/livewire-lounge.json"
+    },
+    {
+        "name": "The People's Cafe",
+        "eventApiType": "webCal",
+        "api": "https://www.meetup.com/coffeehouse-meetup-group/events/ical/",
+        "eventPageUrl": "https://www.meetup.com/coffeehouse-meetup-group/events/"
     },
     {
         "name": "Avondale Events Form Submissions",

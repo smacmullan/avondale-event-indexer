@@ -23,12 +23,18 @@ export async function fetchCpdCapsEvents(org: Organization, endSearchDate: Date)
 }
 
 async function getEventsFromApi(site: string) {
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({ 
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox'
+        ]
+     });
     const page = await browser.newPage();
 
     try {
         // navigate to the homepage to get proper browser cookies
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36');
         await page.goto("https://www.chicagopolice.org/community-engagement-calendar/");
 
         // fetch the data from API

@@ -96,9 +96,19 @@ function customAvondaleFilter(event: Event): boolean {
         return false;
     if (eventNameMatch(event, "Insect Asylum Butterfly pinning workshop", "Avondale Gardening Alliance @ The Insect Asylum"))
         return false;
+    if (eventNameMatch(event, "Insect Asylum's Cat Jam (every Tuesday)", "Avondale Gardening Alliance @ The Insect Asylum"))
+        return false;
+    if (eventNameMatch(event, "Green City Market in Avondale", "Avondale Gardening Alliance @ 3057 N Rockwell St"))
+        return false;
+    if (eventNameMatch(event, "Volunteer", "EcoShip"))
+        return false;
     if (eventNameMatch(event, "Board Meeting @ PS1", "Pumping Station One"))
         return false;
+    if (eventNameMatch(event, "PS1 Member Meeting @ PS1", "Pumping Station One"))
+        return false;
     if (eventNameMatch(event, "Board Meeting @ PS1, First Tuesday of the Month", "Pumping Station One"))
+        return false;
+    if (eventNameMatch(event, "Mementos in the Museum: Tintype Photography Pop-Up  at the Insect Asylum", "The Insect Asylum"))
         return false;
 
     return true;

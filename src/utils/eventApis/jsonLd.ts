@@ -17,7 +17,13 @@ export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date):
     let allEventData = [];
     if (org.jsonLdEventPagesRequireRendering) {
         // get JSON LD data using puppeteer
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ]
+        });
         allEventData = await Promise.all(
             eventLinks.map(async (link) => {
                 try {
@@ -93,7 +99,7 @@ async function extractJsonLdEventsFromRenderedPage(browser: puppeteer.Browser, u
     try {
         const page = await browser.newPage();
         // user agent setting is required to bypass Cloudflare anti-bot measures, will need to be updated in the future
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36');
         await page.goto(url, { waitUntil: 'networkidle2' });
 
         // Extract JSON-LD data
