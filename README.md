@@ -5,9 +5,7 @@ The Avondale Event Indexer is a small application that generates a neighborhood 
 1. Install [Node.js](https://nodejs.org)
 2. Install [Git](https://git-scm.com)
 3. (Optional) Install a text editor, such as [VS Code](https://code.visualstudio.com)
-
 4. Create a new folder somewhere on your computer.
-
 5. Open a command prompt and navigate to the folder. Run the following command to copy the code to your local machine:
 ```bash
 git clone https://github.com/smacmullan/avondale-event-indexer.git
@@ -16,7 +14,6 @@ git clone https://github.com/smacmullan/avondale-event-indexer.git
 ```bash
 npm install
 ```
-
 7. To run the event indexer, run the following command:
 ```bash
 npm run start
@@ -24,12 +21,10 @@ npm run start
 
 See below for additional configuration and scripts.
 
+
 # Configuration
-
 ## Environment Setup
-
 If you are using any Google integrations, you will need to setup an API key. 
-
 1. Get an API key from Google. Your API key will need to **Google Calendar API** and **Google Sheets API** enabled.
 > Refer to [Google's Calendar API Quickstart Guide](https://developers.google.com/calendar/api/quickstart/js). You will need to create a cloud project and enable the APIs. You can skip the OAuth and "create credentials" section. Follow the steps in the "Create an API key" section.
 2. Create a file named `.env` in the project root directory.
@@ -40,17 +35,18 @@ GOOGLE_API_KEY=YOUR_API_KEY
 ```
 
 ## Organization List
+`config/organizations.json` contains a list of organizations to fetch events from. This file comes pre-loaded with local organizations, but you can add more as you see fit. For each organization, you must specify a name, the type of event API, and the API endpoint (usually a URL but sometimes an ID).
 
-The `organizations.json` contains a list of organizations to fetch events from. This file comes pre-loaded with local organizations, but you can add more as you see fit. For each organization, you must specify a name, the type of event API, and the API endpoint (usually a URL but sometimes an ID).
+## Filter List
+`config/filterList.json` contains a list of events to remove from the event list during post-processing. This can be used to get rid common duplicates or non-events so you don't have to repeatedly delete them by hand.
 
 # Scripts
-
 `index.js` in the project root directory is the main script that will fetch event data and compile it into a list. The other scripts are located in the `scripts` directory and allow for finer control of the process or extend the functionality.
 
 This project uses TypeScript. Run all scripts using `npx tsx /path/to/script.tx`.
 
-## index.js
 
+## index.js
 Run this script to fetch event data and produce an event list. This will save two files to `/output`:
 * `rawEvents.json` - the raw event data
 * `events.json` - cleaned event data. Redundant place names and closed events are removed.
@@ -59,18 +55,18 @@ Run this script to fetch event data and produce an event list. This will save tw
 > Running index.js is equivalent to running **getEventData.js** followed by **generateEventList.js**.
 
 ## getEventData.js
-
 Use this script to re-fetch event data. The event data is saved to `rawEvents.json`.
 
 ## generateEventList.js
-
 Use this script to take existing event data in `rawEvents.json` and re-create the `eventList.md` event list and cleaned `events.json` file. This is useful for testing formatting changes without needing to re-fetch the data.
 
-## generatePostPhotos.js
+## exportNewsletterHtml.js
+Use this script to convert the `events.json` file into HTML that can be copied and pasted into a newsletter. This script automatically trims the event data to be Monday through Sunday for the upcoming week.
 
+## exportPostPhotos.js
 Use this script to convert the event list in `eventList.md` into a series of images that can be used for an Instagram post. These images are saved to `/output/posts/`.
-
 > You can manually make edits to `eventList.md` before running this script.
+
 
 # Event List/Calendar Integrations
 This library supports indexing event data from the following sources: 
@@ -102,6 +98,7 @@ This interface also has several associated options that you can enable by specif
 * **jsonLdEventPagesRequiresRendering** (boolean) - by default (false), the interface grabs static HTML served at each event link. Some webpages load ther JSON LD data dynamically, which requires the webpage to render. This is more resource intensive.
 
 > **Note:** At the moment, there is no rate limiting for rendering pages. If multiple pages are rendered concurrently it can place significant load on your system.
+
 
 ## Google Calendar
 This interface allows you to get event data from any public Google calendar. For the API, provide the email address associated with the calendar.
