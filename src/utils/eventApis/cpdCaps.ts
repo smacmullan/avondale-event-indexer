@@ -1,5 +1,5 @@
 import type { Organization, Event } from '../../definitions.ts';
-import puppeteer from 'puppeteer';
+import PuppeteerQueueManager from '../puppeteerQueueManager.ts';
 
 export async function fetchCpdCapsEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
     try {
@@ -8,7 +8,7 @@ export async function fetchCpdCapsEvents(org: Organization, endSearchDate: Date)
         const endDate = Math.floor(endSearchDate.getTime() / 1000);
 
         let apiString = `https://www.chicagopolice.org/api/calendarEvents?start=${today}&end=${endDate}&view=day`;
-        let events = await getEventsFromApi(apiString);
+        let events = await getEventsFromApi(apiString, org);
 
         // filter the data
         const policeBeats = org.api.split(',');
@@ -17,41 +17,38 @@ export async function fetchCpdCapsEvents(org: Organization, endSearchDate: Date)
 
         return events.map(standardizeCpdCapsEvent);
     } catch (error) {
-        console.error(`Error fetching calendar events for ${org.name}.`, error);
+        console.error(`Error fetching calendar events for ${org.name}:`, error);
         return [];
     }
 }
 
-async function getEventsFromApi(site: string) {
-    const browser = await puppeteer.launch({ 
-        headless: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox'
-        ]
-     });
-    const page = await browser.newPage();
+async function getEventsFromApi(site: string, org: Organization) {
+    const queueManager = PuppeteerQueueManager.getInstance();
 
     try {
-        // navigate to the homepage to get proper browser cookies
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36');
-        await page.goto("https://www.chicagopolice.org/community-engagement-calendar/");
+        return await queueManager.queuePageOperation(async (page) => {
+            try {
+                // navigate to the homepage to get proper browser cookies
+                await page.goto("https://www.chicagopolice.org/community-engagement-calendar/", { waitUntil: 'networkidle2' });
 
-        // fetch the data from API
-        const data = await page.evaluate(
-            async (site: string): Promise<any> => {
-                const res = await fetch(site, {
-                    method: 'GET',
-                });
-                return res.json();
-            }, site);
-        await browser.close();
+                // fetch the data from API
+                const data = await page.evaluate(
+                    async (site: string): Promise<any> => {
+                        const res = await fetch(site, {
+                            method: 'GET',
+                        });
+                        return res.json();
+                    }, site);
 
-        return data;
-    } catch (ex) {
-        throw (ex);
-    } finally {
-        await browser.close();
+                return data;
+            } catch (error) {
+                console.error(`Error fetching CPD CAPS events for ${org.name}:`, error);
+                throw error;
+            }
+        });
+    } catch (error) {
+        console.error(`Failed to retrieve CPD CAPS data for ${org.name} (${site}):`, error);
+        throw error;
     }
 }
 

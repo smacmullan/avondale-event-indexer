@@ -16,12 +16,13 @@
     "googleapis": "^144.0.0",
     "ical": "^0.8.0",
     "markdown-it": "^14.1.0",
-    "puppeteer": "^23.5.0",
+    "puppeteer": "^25.0.0",
     "rrule": "^2.8.1"
   },
   "devDependencies": {
     "@types/ical": "^0.8.3",
     "@types/markdown-it": "^14.1.2",
+    "@types/node": "^25.8.0",
     "typescript": "^5.6.3"
   }
 }

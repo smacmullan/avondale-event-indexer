@@ -1,8 +1,9 @@
 import * as cheerio from 'cheerio';
-import puppeteer from 'puppeteer';
+import type { Page } from 'puppeteer';
 import { decodeHtmlEntities } from '../html.ts';
 import type { Organization, Event } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import PuppeteerQueueManager from '../puppeteerQueueManager.ts';
 
 // Function to scrape JSON-LD data from all event pages
 export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
@@ -13,28 +14,23 @@ export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date):
     else
         eventLinks = await extractEventLinksFromHtml(org);
 
-    // Concurrently get event data from individual event pages
+    // Concurrently get event data from individual event pages with queue/rate limiting
     let allEventData = [];
     if (org.jsonLdEventPagesRequireRendering) {
-        // get JSON LD data using puppeteer
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox'
-            ]
-        });
+        // Use queue manager to control concurrent puppeteer operations
+        const queueManager = PuppeteerQueueManager.getInstance();
         allEventData = await Promise.all(
             eventLinks.map(async (link) => {
                 try {
-                    return await extractJsonLdEventsFromRenderedPage(browser, link);
+                    return await queueManager.queuePageOperation(async (page) => {
+                        return await extractJsonLdEventsFromRenderedPage(page, link, org);
+                    });
                 } catch (error) {
-                    console.error(`Error processing ${link}:`, error);
+                    console.error(`[${org.name}] Error processing event page: ${link}`, error instanceof Error ? error.message : error);
                     return null;
                 }
             })
         );
-        await browser.close();
     }
     else {
         // get JSON LD data from static HTML with cheerio
@@ -43,9 +39,9 @@ export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date):
                 // Create a new URL by appending the subdirectory to the original URL
                 const fullUrl = new URL(link, org.api).toString();
                 try {
-                    return await extractJsonLdEventsFromHtml(fullUrl);
+                    return await extractJsonLdEventsFromHtml(fullUrl, org);
                 } catch (error) {
-                    console.error(`Error processing ${fullUrl}:`, error);
+                    console.error(`[${org.name}] Error processing event page: ${fullUrl}`, error instanceof Error ? error.message : error);
                     return null;
                 }
             })
@@ -53,18 +49,18 @@ export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date):
     }
 
     // Filter out any null values and flatten sub-arrays into single array
-    allEventData = allEventData.filter(eventData => eventData !== null);
+    allEventData = allEventData.filter((eventData: any) => eventData !== null);
     allEventData = allEventData.flat();
 
 
-    let events = allEventData.map(event => standardizeJsonLdEvent(event, org));
-    events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    let events = allEventData.map((event: any) => standardizeJsonLdEvent(event, org));
+    events = events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     events = deduplicateEvents(events);
     return events;
 }
 
 
-async function extractJsonLdEventsFromHtml(url: string) {
+async function extractJsonLdEventsFromHtml(url: string, org?: Organization) {
     try {
         const response = await fetch(url);
         const data = await response.text();
@@ -90,17 +86,17 @@ async function extractJsonLdEventsFromHtml(url: string) {
         const events = jsonLdData.filter(item => item['@type'] && item['@type'].includes("Event"));
         return events;
     } catch (error) {
-        console.error('Error fetching the page:', error);
+        const orgName = org?.name || 'Unknown Organization';
+        console.error(`Error fetching a page for ${orgName} (${url}):`, error instanceof Error ? error.message : error);
         return null;
     }
 }
 
-async function extractJsonLdEventsFromRenderedPage(browser: puppeteer.Browser, url: string) {
+async function extractJsonLdEventsFromRenderedPage(page: Page, url: string, org?: Organization) {
+    const orgName = org?.name || 'Unknown Organization';
     try {
-        const page = await browser.newPage();
-        // user agent setting is required to bypass Cloudflare anti-bot measures, will need to be updated in the future
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36');
-        await page.goto(url, { waitUntil: 'networkidle2' });
+        // Use faster waitUntil strategy to avoid waiting for slow external resources
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
         // Extract JSON-LD data
         const jsonLdData = await page.evaluate(() => {
@@ -109,13 +105,10 @@ async function extractJsonLdEventsFromRenderedPage(browser: puppeteer.Browser, u
                 try {
                     return JSON.parse(script.textContent || '{}');
                 } catch {
-                    console.error('Error parsing JSON-LD in browser context');
                     return null;
                 }
             }).filter(item => item !== null);
         });
-
-        page.close();
 
         // Add `url` to JSON-LD data if missing
         jsonLdData.forEach((item: any) => {
@@ -127,7 +120,7 @@ async function extractJsonLdEventsFromRenderedPage(browser: puppeteer.Browser, u
         const events = jsonLdData.filter((item: any) => item['@type'] && item['@type'].includes('Event'));
         return events;
     } catch (error) {
-        console.error('Error fetching the event page data with Puppeteer:', error);
+        console.error(`[${orgName}] Error processing event page: ${url}`, error instanceof Error ? error.message : error);
         return null;
     }
 }
@@ -160,21 +153,21 @@ async function extractEventLinksFromHtml(org: Organization): Promise<string[]> {
 async function extractEventLinksFromRenderedPage(org: Organization): Promise<string[]> {
     const eventHubPageUrl = org.api;
     try {
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
-        await page.goto(eventHubPageUrl, { waitUntil: 'networkidle0' });
+        const queueManager = PuppeteerQueueManager.getInstance();
+        const eventLinks = await queueManager.queuePageOperation(async (page) => {
+            await page.goto(eventHubPageUrl, { waitUntil: 'networkidle0' });
 
-        // Extract links dynamically rendered on the page
-        const links = await page.evaluate(() => {
-            return Array.from(document.querySelectorAll('a')).map(anchor => anchor.href);
+            // Extract links dynamically rendered on the page
+            const links = await page.evaluate(() => {
+                return Array.from(document.querySelectorAll('a')).map(anchor => anchor.href);
+            });
+
+            return filterLinksforEventLinks(links, org);
         });
 
-        await browser.close();
-
-        const eventLinks = filterLinksforEventLinks(links, org);
         return eventLinks;
     } catch (error) {
-        console.error(`Error fetching the main event page "${eventHubPageUrl}":`, error);
+        console.error(`[${org.name}] Error processing hub page: ${eventHubPageUrl}`, error instanceof Error ? error.message : error);
         return [];
     }
 }
