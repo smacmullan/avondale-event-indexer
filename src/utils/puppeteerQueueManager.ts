@@ -6,7 +6,7 @@ import type { Browser, Page } from 'puppeteer';
 
 class PuppeteerQueueManager {
     private static instance: PuppeteerQueueManager;
-    private browser: Browser | null = null;
+    private browserPromise: Promise<Browser> | null = null;
     private activePages = 0;
     private readonly maxConcurrentPages: number;
     private readonly pageTimeout: number;
@@ -18,7 +18,7 @@ class PuppeteerQueueManager {
         reject: (reason?: any) => void;
     }> = [];
 
-    private constructor(maxConcurrentPages = 20, pageTimeoutMs = 15000, idleTimeoutMs = 5000) {
+    private constructor(maxConcurrentPages = 20, pageTimeoutMs = 15000, idleTimeoutMs = 1000) {
         this.maxConcurrentPages = maxConcurrentPages;
         this.pageTimeout = pageTimeoutMs;
         this.idleTimeout = idleTimeoutMs;
@@ -32,53 +32,40 @@ class PuppeteerQueueManager {
     }
 
     async getBrowser(): Promise<Browser> {
-        if (!this.browser) {
-            this.browser = await puppeteer.launch({
+        if (!this.browserPromise) {
+            this.browserPromise = puppeteer.launch({
                 headless: true,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
                 ]
+            }).catch(err => {
+                this.browserPromise = null; // allow retry on failure
+                throw err;
             });
-
-            const proc = this.browser.process();
-
-            // unref browser processes to avoid keeping scripts open
-            if (proc) {
-                proc.unref();
-                (proc.stdin as any)?.unref();
-                (proc.stdout as any)?.unref();
-                (proc.stderr as any)?.unref();
-                proc.stdio.forEach(stream => (stream as any)?.unref());
-            }
         }
-        return this.browser;
+        return this.browserPromise;
     }
 
     async closeBrowser(): Promise<void> {
+        if (this.activePages > 0) {
+            console.warn("Active pages still present, ignoring Puppeteer close request.")
+            return;
+        }
+
         if (this.idleTimer) {
             clearTimeout(this.idleTimer);
             this.idleTimer = null;
         }
-        if (this.browser) {
+        if (this.browserPromise) {
+            const promise = this.browserPromise;
+            this.browserPromise = null; // clear first so new requests can re-launch
             try {
-                await this.browser.close();
+                const browser = await promise;
+                await browser.close();
             } catch (err) {
                 console.warn('Error closing browser:', err);
-            } finally {
-                // need to unref websockets or this will keep scripts open
-                try {
-                    (process as any)._getActiveHandles()
-                        .filter((h: any) =>
-                            Object.getOwnPropertySymbols(h)
-                                .some(s => s.toString() === 'Symbol(websocket)')
-                        )
-                        .forEach((h: any) => {
-                            h.unref();
-                        });
-                } catch { }
-                this.browser = null;
             }
         }
     }
