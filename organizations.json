@@ -26,7 +26,8 @@
     {
         "name": "Firefly Fiber Arts Studio",
         "eventApiType": "jsonLd",
-        "api": "https://www.fireflyfiberarts.com/new-events-1"
+        "api": "https://www.fireflyfiberarts.com/new-events-1",
+        "jsonLdHubPageRequiresRendering": true
     },
     {
         "name": "Prism Games",
@@ -253,6 +254,11 @@
         "eventApiType": "webCal",
         "api": "https://www.meetup.com/coffeehouse-meetup-group/events/ical/",
         "eventPageUrl": "https://www.meetup.com/coffeehouse-meetup-group/events/"
+    },
+    {
+        "name": "Brands Park",
+        "eventApiType": "jsonLd",
+        "api": "https://brands-park.org/en/events"
     },
     {
         "name": "Avondale Events Form Submissions",

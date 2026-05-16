@@ -106,6 +106,8 @@ function customAvondaleFilter(event: Event): boolean {
         return false;
     if (eventNameMatch(event, "PS1 Member Meeting @ PS1", "Pumping Station One"))
         return false;
+    if (eventNameMatch(event, "PS1 Member Meeting", "Pumping Station One"))
+        return false;
     if (eventNameMatch(event, "Board Meeting @ PS1, First Tuesday of the Month", "Pumping Station One"))
         return false;
     if (eventNameMatch(event, "Mementos in the Museum: Tintype Photography Pop-Up  at the Insect Asylum", "The Insect Asylum"))
