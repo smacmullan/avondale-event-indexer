@@ -60,18 +60,47 @@ export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Even
     }
 }
 
+class FetchProgressTracker {
+    private completed = 0;
+    private total: number;
+
+    constructor(total: number) {
+        this.total = total;
+        this.render();
+    }
+
+    finish() {
+        this.completed++;
+        this.render();
+    }
+
+    private render() {
+        process.stdout.write(`\rFetched events for ${this.completed}/${this.total} organizations...`);
+    }
+
+    clear() {
+        process.stdout.write('\r\x1b[K');
+    }
+}
+
 export async function indexEvents(organizations: Organization[]) {
 
+    // console logging of indexing progress
     console.log("Getting event data...");
+    const tracker = new FetchProgressTracker(organizations.length);
 
-    // Fetch events for each organization
-    const eventPromises = organizations.map(org => fetchEvents(org));
+    // configure promise w/ progress logging
+    const eventPromises = organizations.map(org =>
+        fetchEvents(org).then(events => {
+            tracker.finish();
+            return events;
+        })
+    );
+
     const allEventsArrays = await Promise.all(eventPromises);
+    tracker.clear(); // clear logging messages
 
-    // Consolidate all events into one array
     const allEvents = allEventsArrays.flat();
-
-    // Save events to json
     const filePath = 'output/rawEvents.json';
     fs.writeFileSync(filePath, JSON.stringify(allEvents, null, 2));
     console.log(`Event data saved to "${filePath}"`);
