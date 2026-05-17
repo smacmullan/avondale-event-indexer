@@ -94,6 +94,7 @@ function wrapHtmlInStyle(htmlContent: string) {
 
                     body {
                         padding: 6%;
+                        background-color: #ffffff;
                         font-family: 'Noto Sans', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
                         line-height: 1.5;
                     }
