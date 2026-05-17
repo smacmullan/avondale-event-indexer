@@ -80,7 +80,7 @@
         "api": "https://www.chicagoparkdistrict.com/parks-facilities/athletic-field-park"
     },
     {
-        "name": "Athelitc Field Park",
+        "name": "Athletic Field Park",
         "eventApiType": "jsonLd",
         "api": "https://www.athleticfieldpark.com/community-events"
     },
@@ -259,6 +259,12 @@
         "name": "Brands Park",
         "eventApiType": "jsonLd",
         "api": "https://brands-park.org/en/events"
+    },
+    {
+        "name": "Teddy Bear Lounge",
+        "eventApiType": "squareSpace",
+        "api": "https://www.teddybearlounge.com/api/open/GetItemsByMonth?collectionId=69925e8db477a47dd1f291d9",
+        "eventPageUrl": "https://www.teddybearlounge.com/events"
     },
     {
         "name": "Avondale Events Form Submissions",

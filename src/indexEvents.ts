@@ -17,6 +17,7 @@ import { fetchCpdCapsEvents } from './utils/eventApis/cpdCaps.ts';
 import { fetchElfSightEvents } from './utils/eventApis/elfSight.ts';
 import { fetchChicagoBlockPartyEvents } from './utils/eventApis/chicagoBlockParties.ts';
 import { fetchPopMenuEvents } from './utils/eventApis/popMenu.ts';
+import { fetchSquareSpaceEvents } from './utils/eventApis/squareSpace.ts';
 
 
 export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Event[]> {
@@ -54,6 +55,8 @@ export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Even
             return await fetchChicagoBlockPartyEvents(org, endSearchDate);
         case 'popMenu':
             return await fetchPopMenuEvents(org, endSearchDate);
+        case 'squareSpace':
+            return await fetchSquareSpaceEvents(org, endSearchDate);
         default:
             console.log(`No matching API format found for "${org.eventApiType}" at ${org.name}`)
             return [];
