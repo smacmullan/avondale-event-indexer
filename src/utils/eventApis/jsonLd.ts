@@ -95,8 +95,7 @@ async function extractJsonLdEventsFromHtml(url: string, org?: Organization) {
 async function extractJsonLdEventsFromRenderedPage(page: Page, url: string, org?: Organization) {
     const orgName = org?.name || 'Unknown Organization';
     try {
-        // Use faster waitUntil strategy to avoid waiting for slow external resources
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
 
         // Extract JSON-LD data
         const jsonLdData = await page.evaluate(() => {

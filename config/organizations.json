@@ -4,7 +4,7 @@
         "eventApiType": "googleCalendar",
         "googleCalendarUseLocation": true,
         "api": "0130a6e9ed7e9a08143a4105243a6e93f1f738a8a17d6c90a7af0f5d7bb24d2d@group.calendar.google.com",
-        "eventPageUrl": "https://avondalegardeningalliance.wordpress.com/about/aga-calendar/"
+        "eventPageUrl": "https://avondalegardeners.org/events"
     },
     {
         "name": "Reed's Local",
@@ -63,21 +63,6 @@
         "name": "Late Bar",
         "eventApiType": "do312",
         "api": "https://do312.com/venues/late-bar.json"
-    },
-    {
-        "name": "Avondale Park",
-        "eventApiType": "microdata",
-        "api": "https://www.chicagoparkdistrict.com/parks-facilities/avondale-park"
-    },
-    {
-        "name": "Kilbourn Park",
-        "eventApiType": "microdata",
-        "api": "https://www.chicagoparkdistrict.com/parks-facilities/kilbourn-park"
-    },
-    {
-        "name": "Athletic Field Park",
-        "eventApiType": "microdata",
-        "api": "https://www.chicagoparkdistrict.com/parks-facilities/athletic-field-park"
     },
     {
         "name": "Athletic Field Park",
@@ -265,6 +250,18 @@
         "eventApiType": "squareSpace",
         "api": "https://www.teddybearlounge.com/api/open/GetItemsByMonth?collectionId=69925e8db477a47dd1f291d9",
         "eventPageUrl": "https://www.teddybearlounge.com/events"
+    },
+    {
+        "name": "Kilbourn Park",
+        "eventApiType": "googleCalendar",
+        "api": "kilbourncouncil@gmail.com",
+        "eventPageUrl": "https://www.kilbourncouncil.org/events"
+    },
+    {
+        "name": "Night City Games",
+        "eventApiType": "jsonLd",
+        "api": "https://nightcity.games/events/",
+        "jsonLdEventLinkMustInclude": "/e/"
     },
     {
         "name": "Avondale Events Form Submissions",
