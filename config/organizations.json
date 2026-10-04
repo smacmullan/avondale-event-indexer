@@ -73,7 +73,7 @@
         "name": "Unity Park",
         "eventApiType": "googleCalendar",
         "api": "webmaster@unityparkchicago.org",
-        "eventPageUrl": "https://www.unityparkchicago.org/coming-events"
+        "eventPageUrl": "https://www.unityparkchicago.org/events"
     },
     {
         "name": "Hairpin Arts Center",
@@ -262,6 +262,11 @@
         "eventApiType": "jsonLd",
         "api": "https://nightcity.games/events/",
         "jsonLdEventLinkMustInclude": "/e/"
+    },
+    {
+        "name": "Chicago.com",
+        "eventApiType": "chicagoDotCom",
+        "api": "input/avondaleChicagoDotComEvents.json"
     },
     {
         "name": "Avondale Events Form Submissions",
