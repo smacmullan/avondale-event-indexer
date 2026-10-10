@@ -26,7 +26,7 @@ function standardizeChicagoDotComEvent(event: any): Event {
         startDate: event.record.startsAt,
         endDate: event.record.endsAt,
         organizer: {
-            name: event.record.locations?.[0]?.name || 'Chicago.com'
+            name: event.record.locations?.[0]?.name?.split(',')[0].trim() || 'Chicago.com'
         },
         url: event.record.uris?.[0]?.uri || getChicagoDotComEventUrl(event.uri)
     };

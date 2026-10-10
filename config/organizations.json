@@ -4,12 +4,14 @@
         "eventApiType": "googleCalendar",
         "googleCalendarUseLocation": true,
         "api": "0130a6e9ed7e9a08143a4105243a6e93f1f738a8a17d6c90a7af0f5d7bb24d2d@group.calendar.google.com",
+        "dedupeRank": 3,
         "eventPageUrl": "https://avondalegardeners.org/events"
     },
     {
         "name": "Reed's Local",
         "eventApiType": "googleCalendar",
         "api": "reedslocaltap@gmail.com",
+        "dedupeRank": 3,
         "eventPageUrl": "https://reedslocal.com/events/"
     },
     {
@@ -73,6 +75,7 @@
         "name": "Unity Park",
         "eventApiType": "googleCalendar",
         "api": "webmaster@unityparkchicago.org",
+        "dedupeRank": 3,
         "eventPageUrl": "https://www.unityparkchicago.org/events"
     },
     {
@@ -157,17 +160,20 @@
         "name": "Chicago Police CAPS Meetings",
         "eventApiType": "cpdCaps",
         "eventPageUrl": "https://www.chicagopolice.org/community-engagement-calendar/",
+        "dedupeRank": 3,
         "api": "1411,1412,1732,1733,2523"
     },
     {
         "name": "Avondale Block Parties",
         "eventApiType": "chicagoBlockParties",
+        "dedupeRank": 3,
         "api": "22"
     },
     {
         "name": "Pumping Station One",
         "eventApiType": "googleCalendar",
         "api": "hhlp4gcgvdmifq5lcbk7e27om4@group.calendar.google.com",
+        "dedupeRank": 3,
         "eventPageUrl": "https://pumpingstationone.org/events"
     },
     {
@@ -215,18 +221,21 @@
         "name": "EcoShip",
         "eventApiType": "googleCalendar",
         "api": "djrjdo8lttkr78ksvt3c7gnups@group.calendar.google.com",
+        "dedupeRank": 3,
         "eventPageUrl": "https://ecoship.org/calendar"
     },
     {
         "name": "Terracotto Plants",
         "eventApiType": "googleCalendar",
         "api": "hp2ssoso11hv9dheqt6ap8j970@group.calendar.google.com",
+        "dedupeRank": 3,
         "eventPageUrl": "https://www.terracottoplants.com/"
     },
     {
         "name": "Beer Temple",
         "eventApiType": "googleCalendar",
         "api": "info@craftbeertemple.com",
+        "dedupeRank": 3,
         "eventPageUrl": "https://craftbeertemple.com/events-2"
     },
     {
@@ -255,6 +264,7 @@
         "name": "Kilbourn Park",
         "eventApiType": "googleCalendar",
         "api": "kilbourncouncil@gmail.com",
+        "dedupeRank": 3,
         "eventPageUrl": "https://www.kilbourncouncil.org/events"
     },
     {
@@ -266,11 +276,19 @@
     {
         "name": "Chicago.com",
         "eventApiType": "chicagoDotCom",
+        "dedupeRank": 2,
         "api": "input/avondaleChicagoDotComEvents.json"
+    },
+    {
+        "name": "Avondale SBA",
+        "eventApiType": "avondaleSba",
+        "dedupeRank": 2,
+        "api": "https://avondalesba.org"
     },
     {
         "name": "Avondale Events Form Submissions",
         "eventApiType": "googleSheet",
+        "dedupeRank": 1,
         "api": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"
     }
 ]

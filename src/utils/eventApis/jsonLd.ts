@@ -213,7 +213,7 @@ function filterLinksforEventLinks(links: string[], org: Organization): string[] 
 }
 
 
-function standardizeJsonLdEvent(event: any, org: Organization): Event {
+export function standardizeJsonLdEvent(event: any, org: Organization): Event {
     const { name, startDate, endDate, location, url } = event;
 
     return {
