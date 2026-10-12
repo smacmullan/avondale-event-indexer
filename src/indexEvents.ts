@@ -1,4 +1,3 @@
-import fs from 'fs';
 import { getEndOfWeek } from './utils/time.ts';
 import { fetchJsonLdEvents } from './utils/eventApis/jsonLd.ts';
 import { fetchGoogleCalendarEvents } from './utils/eventApis/googleCalendar.ts';
@@ -119,9 +118,5 @@ export async function indexEvents(organizations: Organization[]) {
     tracker.clear(); // clear logging messages
 
     const allEvents = allEventsArrays.flat();
-    const filePath = 'output/rawEvents.json';
-    fs.writeFileSync(filePath, JSON.stringify(allEvents, null, 2));
-    console.log(`Event data saved to "${filePath}"`);
-
     return allEvents;
 }
