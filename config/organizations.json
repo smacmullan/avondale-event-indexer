@@ -274,6 +274,11 @@
         "jsonLdEventLinkMustInclude": "/e/"
     },
     {
+        "name": "Chicago Park District",
+        "eventApiType": "chicagoParkDistrict",
+        "api": "Algonquin Park, Atheltic Field Park, Avondale Park, Brands Park, Elston (Daniel) Park, Grape Park,Kilbourn Park, Kosciuszko (Thadeuz) Park, Nelson (Andrew) Park, Park-View Playlot Park, Sacramento Park"
+    },
+    {
         "name": "Chicago.com",
         "eventApiType": "chicagoDotCom",
         "dedupeRank": 2,

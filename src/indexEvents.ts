@@ -21,6 +21,7 @@ import { fetchChicagoDotComEvents } from './utils/eventApis/chicagoDotCom.ts';
 import { fetchHairpinEvents } from './utils/eventApis/custom/hairpin.ts';
 import { fetchConsignmentLoungeEvents } from './utils/eventApis/custom/consignmentLounge.ts';
 import { fetchAvondaleSbaEvents } from './utils/eventApis/custom/avondaleSba.ts';
+import { fetchChicagoParkDistrictEvents } from './utils/eventApis/chicagoParkDistrict.ts'
 
 
 export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Event[]> {
@@ -62,6 +63,8 @@ export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Even
             return await fetchSquareSpaceEvents(org, endSearchDate);
         case 'chicagoDotCom':
             return await fetchChicagoDotComEvents(org, endSearchDate);
+        case 'chicagoParkDistrict':
+            return await fetchChicagoParkDistrictEvents(org, endSearchDate);
 
         // custom, organization-specific wrappers on existing integrations
         case 'hairpin':
