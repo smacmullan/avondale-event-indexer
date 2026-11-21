@@ -20,12 +20,16 @@ export async function fetchWebCalEvents(org: Organization, endSearchDate: Date):
 }
 
 function standardizeWebCalEvent(event: any, org: Organization): Event {
+    const organizerName = typeof event.organizer === 'string'
+        ? undefined
+        : event.organizer?.val;
+
     return {
         name: decodeHtmlEntities(event.summary),
         startDate: event.start,
         endDate: event.end,
         organizer: {
-            name: event.organizer ? decodeHtmlEntities(event.organizer.val) : org.name,
+            name: organizerName ? decodeHtmlEntities(organizerName) : org.name,
         },
         url: org.eventPageUrl,
     };

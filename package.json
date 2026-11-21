@@ -5,7 +5,8 @@
   "type": "module",
   "main": "index.ts",
   "scripts": {
-    "build": "tsc",
+    "typecheck": "tsc",
+    "test": "node --test",
     "start": "node index.ts"
   },
   "author": "Sean MacMullan",
