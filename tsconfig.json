@@ -12,7 +12,7 @@
     "src/**/*.*", 
     "scripts/**/*.*",
     "index.ts",
-    "test/**/*.ts",
+    // "test/**/*.ts",
   ],
   "exclude": [
     "node_modules",

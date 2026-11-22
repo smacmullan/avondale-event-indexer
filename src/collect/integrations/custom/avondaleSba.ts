@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type * as cheerio from 'cheerio';
-import type { Event, EventIntegration } from '../../../definitions.ts';
-import { isEventUpcomingAndBeforeDate } from '../../time.ts';
+import type { EventRecord, EventIntegration } from '../../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../../../utils/time.ts';
 import { fetchText, standardizeAll } from '../../integrationHelpers.ts';
 import { extractJsonLdEventsFromHtml, standardizeJsonLdEvent } from '../jsonLd.ts';
  
@@ -26,22 +26,22 @@ export const avondaleSbaIntegration = {
  
     parseOptions: raw => optionsSchema.parse(raw),
  
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // Failing to load the sitemap throws (whole integration fails).
         const eventLinks = await extractEventLinksFromSiteMap(options.url);
  
         // From here on, a failure on one event page only skips that page.
         const pages = await Promise.all(
             eventLinks.map(link =>
-                extractJsonLdEventsFromHtml(new URL(link, options.url).toString(), org, linksToAvondaleEvents)
+                extractJsonLdEventsFromHtml(new URL(link, options.url).toString(), source, linksToAvondaleEvents)
             )
         );
         const rawEvents = pages.filter((page): page is any[] => page !== null).flat();
  
-        const events = standardizeAll(rawEvents, (event: any) => standardizeJsonLdEvent(event, org), org.name);
+        const events = standardizeAll(rawEvents, (event: any) => standardizeJsonLdEvent(event, source), source.name);
  
         // Pages can't be filtered by date up front, so filter here.
-        return events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
+        return events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
 } satisfies EventIntegration<AvondaleSbaOptions>;
  

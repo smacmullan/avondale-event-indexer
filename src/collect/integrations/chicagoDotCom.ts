@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { readFile } from 'fs/promises';
-import type { Event, EventIntegration } from '../../definitions.ts';
-import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -16,7 +16,7 @@ export const chicagoDotComIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // Chicago.com does not have a public events API yet, so response data is copied to a file.
         // A missing or malformed file throws (whole integration fails).
         const fileContents = await readFile(options.file, 'utf8');
@@ -24,7 +24,7 @@ export const chicagoDotComIntegration = {
         if (!Array.isArray(data?.events))
             throw new Error(`"${options.file}" has no "events" array`);
 
-        const events = standardizeAll(data.events, standardizeChicagoDotComEvent, org.name);
+        const events = standardizeAll(data.events, standardizeChicagoDotComEvent, source.name);
 
         // A file has no date filter, so filter here.
         return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
@@ -32,7 +32,7 @@ export const chicagoDotComIntegration = {
 } satisfies EventIntegration<ChicagoDotComOptions>;
 
 
-function standardizeChicagoDotComEvent(event: any): Event {
+function standardizeChicagoDotComEvent(event: any): EventRecord {
     return {
         name: event.record.name,
         startDate: event.record.startsAt,

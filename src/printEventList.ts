@@ -1,8 +1,8 @@
 import fs from 'fs';
 import { formatTimeRange, formatDay } from './utils/time.ts';
-import type { Event } from './definitions.ts';
+import type { EventRecord } from './definitions.ts';
 
-export function printEventList(events: Event[], filePath = "output/eventList.md") {
+export function printEventList(events: EventRecord[], filePath = "output/eventList.md") {
     console.log("Converting event data into event list...");
 
     let currentDay = '';

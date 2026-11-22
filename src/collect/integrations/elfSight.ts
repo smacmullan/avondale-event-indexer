@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { Event, EventIntegration, Organization } from '../../definitions.ts';
-import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import type { EventRecord, EventIntegration, EventSource } from '../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -20,18 +20,18 @@ export const elfSightIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         const data = await fetchJson(options.url);
         const elfSightEvents = extractEventArray(data, options.url);
 
         const events = standardizeAll(
             elfSightEvents,
-            (event: any) => standardizeElfSightEvent(event, org, options),
-            org.name,
+            (event: any) => standardizeElfSightEvent(event, source, options),
+            source.name,
         );
 
         // The widget data can't filter by date, so filter here.
-        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+        return events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
 } satisfies EventIntegration<ElfSightOptions>;
 
@@ -43,14 +43,14 @@ function extractEventArray(json: any, url: string): any[] {
     return widget.data?.settings?.events || [];
 }
 
-function standardizeElfSightEvent(event: any, org: Organization, options: ElfSightOptions): Event {
+function standardizeElfSightEvent(event: any, source: EventSource, options: ElfSightOptions): EventRecord {
     const startDate = new Date(`${event.start.date}T${event.start.time}:00`).toISOString();
 
     return {
         name: event.name,
         startDate,
         organizer: {
-            name: org.name,
+            name: source.name,
         },
         url: options.eventPageUrl || undefined,
     };

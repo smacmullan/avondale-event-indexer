@@ -1,10 +1,10 @@
 import fs from 'fs';
-import { indexEvents } from "./src/indexEvents.ts";
+import { collectEvents } from "./src/collect/collectEvents.ts";
 import { printEventList } from "./src/printEventList.ts";
 import { cleanEvents } from './src/cleanEvents.ts';
 
-const organizations = JSON.parse(fs.readFileSync('config/organizations.json', 'utf-8'));
-let events = await indexEvents(organizations);
+const sources = JSON.parse(fs.readFileSync('config/sources.json', 'utf-8'));
+let events = await collectEvents(sources);
 // save raw event data
 fs.writeFileSync('output/rawEvents.json', JSON.stringify(events, null, 2));
 

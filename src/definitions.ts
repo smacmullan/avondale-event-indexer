@@ -1,5 +1,5 @@
 
-export type Event = {
+export type EventRecord = {
     name: string;
     startDate: ISODate | ISODatetime;
     endDate?: ISODate | ISODatetime;
@@ -17,10 +17,10 @@ export type EventSchedule = {
     monthlyOccurence?: string;
 }
 
-export type Organization = {
+export type EventSource = {
     name: string;
-    eventApiType: string;
-    /** Used for picking event to keep from duplicates. Lower value is preffered. If not specified, assume 0 (highest).
+    integrationType: string;
+    /** Used for picking event to keep from duplicates. Lower value is preferred. If not specified, assume 0 (highest).
      * 
      * Suggested values:
      *  - 0: direct source w/ event detail pages
@@ -34,7 +34,7 @@ export type Organization = {
 };
 
 export interface IntegrationContext<TOptions> {
-    org: Organization;
+    source: EventSource;
     options: TOptions;
     /** Integrations must not return events starting after this. */
     endSearchDate: Date;
@@ -45,7 +45,7 @@ export interface EventIntegration<TOptions = unknown> {
     /** Validate and normalize raw config. Throw on invalid input. */
     parseOptions(raw: unknown): TOptions;
     /** May throw; the registry handles failures. */
-    fetchEvents(ctx: IntegrationContext<TOptions>): Promise<Event[]>;
+    fetchEvents(ctx: IntegrationContext<TOptions>): Promise<EventRecord[]>;
 }
 
 type ISODate = string; // Expected format: YYYY-MM-DD

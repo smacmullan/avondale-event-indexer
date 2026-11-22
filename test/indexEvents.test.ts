@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fetchEvents, indexEvents } from '../src/indexEvents.ts';
+import { fetchEvents, collectEvents } from '../src/collect/collectEvents.ts';
 
 function toIcalDate(date: Date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
@@ -10,7 +10,7 @@ test('fetchEvents returns an empty list for an unsupported provider type', async
     t.mock.method(console, 'log', () => {});
 
     assert.deepEqual(
-        await fetchEvents({ name: 'Unknown Org', eventApiType: 'unsupported', api: '' }),
+        await fetchEvents({ name: 'Unknown Org', integrationType: 'unsupported', api: '' }),
         [],
     );
 });
@@ -22,8 +22,8 @@ test('indexEvents returns no events and makes no fetch requests for unsupported 
         throw new Error('fetch should not be called for an unsupported provider');
     });
 
-    const events = await indexEvents([
-        { name: 'Unknown Org', eventApiType: 'unsupported', api: '' },
+    const events = await collectEvents([
+        { name: 'Unknown Org', integrationType: 'unsupported', api: '' },
     ]);
 
     assert.deepEqual(events, []);
@@ -49,9 +49,9 @@ END:VCALENDAR`);
     t.mock.method(console, 'log', () => {});
     t.mock.method(process.stdout, 'write', () => true);
 
-    const events = await indexEvents([
-        { name: 'First Org', eventApiType: 'webCal', api: 'https://example.test/first.ics' },
-        { name: 'Second Org', eventApiType: 'webCal', api: 'https://example.test/second.ics' },
+    const events = await collectEvents([
+        { name: 'First Org', integrationType: 'webCal', api: 'https://example.test/first.ics' },
+        { name: 'Second Org', integrationType: 'webCal', api: 'https://example.test/second.ics' },
     ]);
 
     assert.deepEqual(events.map(event => event.name).sort(), ['First Event', 'Second Event']);

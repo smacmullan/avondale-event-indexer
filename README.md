@@ -34,8 +34,8 @@ If you are using any Google integrations, you will need to setup an API key.
 GOOGLE_API_KEY=YOUR_API_KEY
 ```
 
-## Organization List
-`config/organizations.json` contains a list of organizations to fetch events from. This file comes pre-loaded with local organizations, but you can add more as you see fit. For each organization, you must specify a name, the type of event API, and the API endpoint (usually a URL but sometimes an ID).
+## Source List
+`config/sources.json` contains a list of sources to fetch events from. This file comes pre-loaded with local organizations' sources, but you can add more as you see fit. For each source, you must specify a name, the type of integration, and the integration options.
 
 ## Filter List
 `config/filterList.json` contains a list of events to remove from the event list during post-processing. This can be used to get rid common duplicates or non-events so you don't have to repeatedly delete them by hand.

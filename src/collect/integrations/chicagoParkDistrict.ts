@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Event, EventIntegration } from '../../definitions.ts';
+import type { EventRecord, EventIntegration } from '../../definitions.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -16,13 +16,13 @@ export const chicagoParkDistrictIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // The query filters by date range, so no post-filtering is needed.
         const data = await fetchJson<any[]>(generateApiUrl(options, endSearchDate));
         if (!Array.isArray(data))
             throw new Error('Unexpected response from data portal (expected an array)');
 
-        return standardizeAll(data, standardizeParkDistrictEvent, org.name);
+        return standardizeAll(data, standardizeParkDistrictEvent, source.name);
     },
 } satisfies EventIntegration<ChicagoParkDistrictOptions>;
 
@@ -69,7 +69,7 @@ function generateApiUrl(options: ChicagoParkDistrictOptions, endSearchDate: Date
 
 }
 
-function standardizeParkDistrictEvent(event: any): Event {
+function standardizeParkDistrictEvent(event: any): EventRecord {
     return {
         name: event.title,
         startDate: event.start_date,

@@ -1,10 +1,10 @@
 import * as cheerio from 'cheerio';
 import { z } from 'zod';
 import type { Page } from 'puppeteer';
-import { decodeHtmlEntities } from '../html.ts';
-import type { Organization, Event, EventIntegration } from '../../definitions.ts';
-import { isEventUpcomingAndBeforeDate } from '../time.ts';
-import PuppeteerQueueManager from '../puppeteerQueueManager.ts';
+import { decodeHtmlEntities } from '../../utils/html.ts';
+import type { EventSource, EventRecord, EventIntegration } from '../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
+import PuppeteerQueueManager from '../../utils/puppeteerQueueManager.ts';
 import { fetchText, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -27,10 +27,10 @@ export const jsonLdIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // Failing to load the hub page throws (whole integration fails).
         const hubLinks = options.hubPageRequiresRendering
-            ? await extractEventLinksFromRenderedPage(options, org)
+            ? await extractEventLinksFromRenderedPage(options, source)
             : await extractEventLinksFromHtml(options);
 
         // Resolve relative links against the hub page so both fetch paths get absolute URLs
@@ -45,10 +45,10 @@ export const jsonLdIntegration = {
                 eventLinks.map(async (link) => {
                     try {
                         return await queueManager.queuePageOperation(async (page) => {
-                            return await extractJsonLdEventsFromRenderedPage(page, link, org);
+                            return await extractJsonLdEventsFromRenderedPage(page, link, source);
                         });
                     } catch (error) {
-                        console.error(`[${org.name}] Error processing event page: ${link}`, error instanceof Error ? error.message : error);
+                        console.error(`[${source.name}] Error processing event page: ${link}`, error instanceof Error ? error.message : error);
                         return null;
                     }
                 })
@@ -57,7 +57,7 @@ export const jsonLdIntegration = {
         else {
             // get JSON LD data from static HTML with cheerio
             allEventData = await Promise.all(
-                eventLinks.map(link => extractJsonLdEventsFromHtml(link, org))
+                eventLinks.map(link => extractJsonLdEventsFromHtml(link, source))
             );
         }
 
@@ -65,9 +65,9 @@ export const jsonLdIntegration = {
         const rawEvents = allEventData.filter(eventData => eventData !== null).flat();
 
         // This source can't pre-filter by date, so filter here.
-        const events = standardizeAll(rawEvents, (event: any) => standardizeJsonLdEvent(event, org), org.name);
+        const events = standardizeAll(rawEvents, (event: any) => standardizeJsonLdEvent(event, source), source.name);
         return deduplicateEvents(
-            events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate))
+            events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate))
         );
     },
 } satisfies EventIntegration<JsonLdOptions>;
@@ -79,7 +79,7 @@ export const jsonLdIntegration = {
  */
 export async function extractJsonLdEventsFromHtml(
     url: string,
-    org: Organization,
+    source: EventSource,
     shouldSkipPage?: (page: cheerio.CheerioAPI) => boolean,
 ): Promise<any[] | null> {
     try {
@@ -98,7 +98,7 @@ export async function extractJsonLdEventsFromHtml(
 
                     jsonLdData.push(jsonLdJSON);
                 } catch (error) {
-                    console.error(`[${org.name}] Error parsing JSON-LD on ${url}:`, error);
+                    console.error(`[${source.name}] Error parsing JSON-LD on ${url}:`, error);
                 }
             }
         });
@@ -106,13 +106,13 @@ export async function extractJsonLdEventsFromHtml(
         jsonLdData = jsonLdData.flat();
         return jsonLdData.filter(item => item['@type'] && item['@type'].includes("Event"));
     } catch (error) {
-        console.error(`[${org.name}] Error fetching a page (${url}):`, error instanceof Error ? error.message : error);
+        console.error(`[${source.name}] Error fetching a page (${url}):`, error instanceof Error ? error.message : error);
         return null;
     }
 }
 
 /** Returns null (and logs) if the page can't be processed. */
-async function extractJsonLdEventsFromRenderedPage(page: Page, url: string, org: Organization): Promise<any[] | null> {
+async function extractJsonLdEventsFromRenderedPage(page: Page, url: string, source: EventSource): Promise<any[] | null> {
     try {
         await page.goto(url, { waitUntil: 'load', timeout: 20000 });
 
@@ -137,7 +137,7 @@ async function extractJsonLdEventsFromRenderedPage(page: Page, url: string, org:
 
         return jsonLdData.filter((item: any) => item['@type'] && item['@type'].includes('Event'));
     } catch (error) {
-        console.error(`[${org.name}] Error processing event page: ${url}`, error instanceof Error ? error.message : error);
+        console.error(`[${source.name}] Error processing event page: ${url}`, error instanceof Error ? error.message : error);
         return null;
     }
 }
@@ -157,12 +157,12 @@ async function extractEventLinksFromHtml(options: JsonLdOptions): Promise<string
     return filterLinksforEventLinks(links, options);
 }
 
-async function extractEventLinksFromRenderedPage(options: JsonLdOptions, org: Organization): Promise<string[]> {
+async function extractEventLinksFromRenderedPage(options: JsonLdOptions, source: EventSource): Promise<string[]> {
     const queueManager = PuppeteerQueueManager.getInstance();
     return await queueManager.queuePageOperation(async (page) => {
         const response = await page.goto(options.url, { waitUntil: 'networkidle0' });
         if (response && !response.ok())
-            throw new Error(`[${org.name}] Hub page "${options.url}" returned HTTP ${response.status()}`);
+            throw new Error(`[${source.name}] Hub page "${options.url}" returned HTTP ${response.status()}`);
 
         // Extract links dynamically rendered on the page
         const links = await page.evaluate(() => {
@@ -215,7 +215,7 @@ function filterLinksforEventLinks(links: string[], options: JsonLdOptions): stri
 
 
 // Exported unchanged: other integrations may reuse it.
-export function standardizeJsonLdEvent(event: any, org: Organization): Event {
+export function standardizeJsonLdEvent(event: any, source: EventSource): EventRecord {
     const { name, startDate, endDate, location, url } = event;
 
     return {
@@ -223,13 +223,13 @@ export function standardizeJsonLdEvent(event: any, org: Organization): Event {
         startDate,
         endDate,
         organizer: {
-            name: decodeHtmlEntities(location?.name) || org.name,
+            name: decodeHtmlEntities(location?.name) || source.name,
         },
         url,
     };
 }
 
-function deduplicateEvents(events: Event[]) {
+function deduplicateEvents(events: EventRecord[]) {
     const uniqueEvents = [
         ...new Map(
             events.map(event => [

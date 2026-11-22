@@ -1,4 +1,4 @@
-import type { Event, EventIntegration, IntegrationContext } from '../definitions.ts';
+import type { EventRecord, EventIntegration, IntegrationContext } from '../definitions.ts';
 
 /** URL without the query string, so error messages stay short and don't leak keys. */
 function describeUrl(url: string): string {
@@ -33,10 +33,10 @@ export async function fetchText(url: string, init?: RequestInit): Promise<string
  */
 export function standardizeAll<T>(
     items: readonly T[],
-    standardize: (item: T) => Event | null | undefined,
-    orgName: string,
-): Event[] {
-    const events: Event[] = [];
+    standardize: (item: T) => EventRecord | null | undefined,
+    sourceName: string,
+): EventRecord[] {
+    const events: EventRecord[] = [];
     let failed = 0;
     let firstError: unknown;
 
@@ -52,20 +52,20 @@ export function standardizeAll<T>(
 
     if (failed > 0) {
         const message = firstError instanceof Error ? firstError.message : String(firstError);
-        console.warn(`[${orgName}] Skipped ${failed} of ${items.length} events that couldn't be parsed. First error: ${message}`);
+        console.warn(`[${sourceName}] Skipped ${failed} of ${items.length} events that couldn't be parsed. First error: ${message}`);
     }
     return events;
 }
 
 /**
- * Build an organization-specific integration on top of an existing one: the base integration
+ * Build an source-specific integration on top of an existing one: the base integration
  * fetches (and validates options as usual), then `transform` post-processes its events.
  * The new integration accepts exactly the same options as the base.
  */
 export function withTransform<TOptions>(
     base: EventIntegration<TOptions>,
     type: string,
-    transform: (events: Event[], ctx: IntegrationContext<TOptions>) => Event[],
+    transform: (events: EventRecord[], ctx: IntegrationContext<TOptions>) => EventRecord[],
 ): EventIntegration<TOptions> {
     return {
         type,

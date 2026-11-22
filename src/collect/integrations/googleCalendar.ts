@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import { z } from 'zod';
-import type { Event, EventIntegration } from '../../definitions.ts';
+import type { EventRecord, EventIntegration } from '../../definitions.ts';
 process.loadEnvFile();
 
 const optionsSchema = z.object({
@@ -19,7 +19,7 @@ export const googleCalendarIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         const apiKey = process.env.GOOGLE_API_KEY;
         if (!apiKey)
             throw new Error('GOOGLE_API_KEY is not set');
@@ -38,16 +38,16 @@ export const googleCalendarIntegration = {
         });
 
         const events = response.data.items || [];
-        return events.map(event => standardizeGoogleEvent(event, org.name, options));
+        return events.map(event => standardizeGoogleEvent(event, source.name, options));
     },
 } satisfies EventIntegration<GoogleCalendarOptions>;
 
-function standardizeGoogleEvent(event: any, orgName: string, options: GoogleCalendarOptions): Event {
-    let organizationName = orgName;
+function standardizeGoogleEvent(event: any, sourceName: string, options: GoogleCalendarOptions): EventRecord {
+    let organizationName = sourceName;
     if (options.useLocation && event.location) {
         // append location to organization name
         const location = event.location.split(/,|-/)[0].trim(); // trim end off location
-        organizationName = `${orgName} @ ${location}`;
+        organizationName = `${sourceName} @ ${location}`;
     }
 
     return {

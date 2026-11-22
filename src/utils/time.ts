@@ -1,4 +1,4 @@
-import type { Event } from "../definitions.js";
+import type { EventRecord } from "../definitions.js";
 
 function formatTime(date: Date, hoursOnly = false) {
     const hours = date.getHours() % 12 || 12;
@@ -7,7 +7,7 @@ function formatTime(date: Date, hoursOnly = false) {
     return minutes === 0 ? `${hours}${period}` : `${hours}:${minutes.toString().padStart(2, '0')}${period}`;
 };
 
-export function formatTimeRange(event: Event) {
+export function formatTimeRange(event: EventRecord) {
 
     if (!event.startDate || isISODate(event.startDate)) {
         // no start or end time provided
@@ -43,7 +43,7 @@ export function formatTimeRange(event: Event) {
 }
 
 
-export function formatDay(event: Event) {
+export function formatDay(event: EventRecord) {
     let date;
     if (isISODate(event.startDate))
         date = getDateFromISODate(event.startDate);
@@ -94,7 +94,7 @@ function isISODateTime(str: string) {
     return isoDateTimeRegex.test(str);
 }
 
-export function eventSort(a: Event, b: Event) {
+export function eventSort(a: EventRecord, b: EventRecord) {
     // sort start times in order
     let aDateTime = isISODate(a.startDate) ? getDateFromISODate(a.startDate) : new Date(a.startDate);
     let bDateTime = isISODate(b.startDate) ? getDateFromISODate(b.startDate) : new Date(b.startDate);
@@ -111,12 +111,12 @@ export function eventSort(a: Event, b: Event) {
 /**
 * Determines if event occurs between current moment and end date.
 */
-export function isEventUpcomingAndBeforeDate(event: Event, end: Date): boolean {
+export function isEventUpcomingAndBeforeDate(event: EventRecord, end: Date): boolean {
     const today = new Date();
     return isEventInTimeRange(event, today, end);
 }
 
-export function isEventInTimeRange(event: Event, start: Date, end: Date): boolean {
+export function isEventInTimeRange(event: EventRecord, start: Date, end: Date): boolean {
     if (event.endDate && isEventDurationLessThanAWeek(event)) {
         // include events with end date after "start" to include in-progress events
         return (new Date(event.endDate) > start && new Date(event.startDate) < end);
@@ -128,7 +128,7 @@ export function isEventInTimeRange(event: Event, start: Date, end: Date): boolea
 /**
 * Useful for filtering out event series
 */
-function isEventDurationLessThanAWeek(event: Event): boolean {
+function isEventDurationLessThanAWeek(event: EventRecord): boolean {
     if (event.endDate)
         return ((new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) < 7 * 24 * 60 * 60 * 1000);
     else

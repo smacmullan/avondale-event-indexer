@@ -1,4 +1,4 @@
-import type { Event } from '../../../definitions.ts';
+import type { EventRecord } from '../../../definitions.ts';
 import { jsonLdIntegration } from '../jsonLd.ts';
 import { withTransform } from '../../integrationHelpers.ts';
 
@@ -18,7 +18,7 @@ const BAD_NAME_PREFIX = "Explore Our";
  * Attempt to replace generic Hairpin name with event text in the event URL.
  * @param event 
  */
-export function cleanupEventName(event: Event): Event {
+export function cleanupEventName(event: EventRecord): EventRecord {
     try {
         if (!shouldCleanupEvent(event)) {
             return event;
@@ -52,7 +52,7 @@ export function cleanupEventName(event: Event): Event {
     }
 }
 
-function shouldCleanupEvent(event: Event): boolean {
+function shouldCleanupEvent(event: EventRecord): boolean {
     return Boolean(
         event?.name &&
         event?.url &&

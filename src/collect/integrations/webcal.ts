@@ -1,8 +1,8 @@
 import ical from 'ical';
 import { z } from 'zod';
-import { decodeHtmlEntities } from '../html.ts';
-import type { Event, EventIntegration, Organization } from '../../definitions.ts';
-import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import { decodeHtmlEntities } from '../../utils/html.ts';
+import type { EventRecord, EventIntegration, EventSource } from '../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchText, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -19,7 +19,7 @@ export const webCalIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         const data = await fetchText(options.url);
         const calendarData = ical.parseICS(data);
 
@@ -28,16 +28,16 @@ export const webCalIntegration = {
 
         const events = standardizeAll(
             webCalEvents,
-            (event: any) => standardizeWebCalEvent(event, org, options),
-            org.name,
+            (event: any) => standardizeWebCalEvent(event, source, options),
+            source.name,
         );
 
         // iCal feeds can't be filtered by date, so filter here.
-        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+        return events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
 } satisfies EventIntegration<WebCalOptions>;
 
-function standardizeWebCalEvent(event: any, org: Organization, options: WebCalOptions): Event {
+function standardizeWebCalEvent(event: any, source: EventSource, options: WebCalOptions): EventRecord {
     const organizerName = typeof event.organizer === 'string'
         ? undefined
         : event.organizer?.val;
@@ -47,7 +47,7 @@ function standardizeWebCalEvent(event: any, org: Organization, options: WebCalOp
         startDate: event.start,
         endDate: event.end,
         organizer: {
-            name: organizerName ? decodeHtmlEntities(organizerName) : org.name,
+            name: organizerName ? decodeHtmlEntities(organizerName) : source.name,
         },
         url: options.eventPageUrl,
     };

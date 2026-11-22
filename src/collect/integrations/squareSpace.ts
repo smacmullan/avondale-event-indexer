@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { Event, EventIntegration, Organization } from '../../definitions.ts';
-import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import type { EventRecord, EventIntegration, EventSource } from '../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -17,7 +17,7 @@ export const squareSpaceIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // Squarespace groups events by month, so the time range may need multiple calls.
         // Calls are sequential to stay polite to the site.
         const squareSpaceEvents: any[] = [];
@@ -30,12 +30,12 @@ export const squareSpaceIntegration = {
 
         const events = standardizeAll(
             squareSpaceEvents,
-            (event: any) => standardizeSquareSpaceEvents(event, org, options),
-            org.name,
+            (event: any) => standardizeSquareSpaceEvents(event, source, options),
+            source.name,
         );
 
         // Months are coarser than our date range, so filter here.
-        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+        return events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
 } satisfies EventIntegration<SquareSpaceOptions>;
 
@@ -59,13 +59,13 @@ function generateMonthStrings(endSearchDate: Date): string[] {
     return monthStrings;
 }
 
-function standardizeSquareSpaceEvents(event: any, org: Organization, options: SquareSpaceOptions): Event {
+function standardizeSquareSpaceEvents(event: any, source: EventSource, options: SquareSpaceOptions): EventRecord {
     return {
         name: event.title,
         startDate: new Date(event.startDate).toISOString(),
         endDate: new Date(event.endDate).toISOString(),
         organizer: {
-            name: org.name,
+            name: source.name,
         },
         url: options.eventPageUrl || undefined,
     };

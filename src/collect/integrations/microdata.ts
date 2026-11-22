@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import { z } from 'zod';
-import type { Event, EventIntegration } from '../../definitions.ts';
-import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchText } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -16,12 +16,12 @@ export const microdataIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         const html = await fetchText(options.url);
         const $ = cheerio.load(html);
 
         // Extract event microdata. Elements missing a name or date are skipped.
-        const events: Event[] = [];
+        const events: EventRecord[] = [];
         $('article.event-list-object').each((i, element) => {
             const eventName = $(element).find('.event-object-title a[itemprop="name"] span').text().trim();
             const eventDate = $(element).find('meta[itemprop="startDate"]').attr('content');
@@ -44,7 +44,7 @@ export const microdataIntegration = {
                 name: eventName,
                 startDate: eventDate + "Z", // "Z" forces dates to be treated as UTC
                 organizer: {
-                    name: eventLocation || org.name,
+                    name: eventLocation || source.name,
                 },
                 url: fullEventLink,
             });

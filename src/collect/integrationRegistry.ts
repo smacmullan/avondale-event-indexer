@@ -1,11 +1,11 @@
-import type { Event, EventIntegration, Organization } from './definitions.ts';
+import type { EventRecord, EventIntegration, EventSource } from '../definitions.ts';
 
-type Runner = (org: Organization, endSearchDate: Date) => Promise<Event[]>;
+type Runner = (source: EventSource, endSearchDate: Date) => Promise<EventRecord[]>;
 
 /**
- * Maps `eventApiType` strings to integrations. Failures of any kind (invalid options,
+ * Maps `integrationType` strings to integrations. Failures of any kind (invalid options,
  * thrown fetch errors, unknown type) are logged and produce an empty event list so
- * other organizations keep processing.
+ * other sources keep processing.
  */
 export class IntegrationRegistry {
     private runners = new Map<string, Runner>();
@@ -16,12 +16,12 @@ export class IntegrationRegistry {
 
         // Closing over the typed integration erases TOptions for storage while keeping
         // parseOptions -> fetchEvents type-checked inside this closure.
-        this.runners.set(integration.type, async (org, endSearchDate) => {
+        this.runners.set(integration.type, async (source, endSearchDate) => {
             try {
-                const options = integration.parseOptions(org.options ?? {});
-                return await integration.fetchEvents({ org, options, endSearchDate });
+                const options = integration.parseOptions(source.options ?? {});
+                return await integration.fetchEvents({ source: source, options, endSearchDate });
             } catch (error) {
-                console.error(`[${org.name}] ${integration.type} failed:`,
+                console.error(`[${source.name}] ${integration.type} failed:`,
                     error instanceof Error ? error.message : error);
                 return [];
             }
@@ -36,12 +36,12 @@ export class IntegrationRegistry {
         return [...this.runners.keys()];
     }
 
-    async fetchEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-        const run = this.runners.get(org.eventApiType);
+    async fetchEvents(source: EventSource, endSearchDate: Date): Promise<EventRecord[]> {
+        const run = this.runners.get(source.integrationType);
         if (!run) {
-            console.error(`[${org.name}] No integration registered for "${org.eventApiType}"`);
+            console.error(`[${source.name}] No integration registered for "${source.integrationType}"`);
             return [];
         }
-        return run(org, endSearchDate);
+        return run(source, endSearchDate);
     }
 }

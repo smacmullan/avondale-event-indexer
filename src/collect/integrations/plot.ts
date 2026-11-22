@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Event, EventIntegration } from '../../definitions.ts';
+import type { EventRecord, EventIntegration } from '../../definitions.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -16,7 +16,7 @@ export const plotIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // The API filters by date range, so no post-filtering is needed.
         // put dates into YYYY-MM-DD format
         const today = new Date().toISOString().split('T')[0];
@@ -28,11 +28,11 @@ export const plotIntegration = {
             throw new Error('Unexpected Plot response (expected an array)');
 
         // Events with unparseable dates are skipped and summarized in one log line
-        return standardizeAll(plotEvents, standardizePlotEvent, org.name);
+        return standardizeAll(plotEvents, standardizePlotEvent, source.name);
     },
 } satisfies EventIntegration<PlotOptions>;
 
-function standardizePlotEvent(event: any): Event {
+function standardizePlotEvent(event: any): EventRecord {
     const { title, dateTime, venue, permalink } = event;
 
     return {

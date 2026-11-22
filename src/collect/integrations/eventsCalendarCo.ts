@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Event, EventIntegration } from '../../definitions.ts';
+import type { EventRecord, EventIntegration } from '../../definitions.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -18,7 +18,7 @@ export const eventsCalendarCoIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // The API filters by date range, so no post-filtering is needed.
         // put dates into Unix timestamp format (milliseconds)
         const today = new Date().setHours(0, 0, 0, 0); // today at 00:00
@@ -29,11 +29,11 @@ export const eventsCalendarCoIntegration = {
         if (!Array.isArray(data?.events))
             throw new Error('Unexpected response (no "events" array)');
 
-        return standardizeAll(data.events, standardizeEventsCalendarCoEvent, org.name);
+        return standardizeAll(data.events, standardizeEventsCalendarCoEvent, source.name);
     },
 } satisfies EventIntegration<EventsCalendarCoOptions>;
 
-function standardizeEventsCalendarCoEvent(event: any): Event {
+function standardizeEventsCalendarCoEvent(event: any): EventRecord {
     const { title, start_time, end_time, location, event_link } = event;
 
     return {

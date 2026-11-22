@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import { cleanEvents } from '../src/cleanEvents.ts';
-import type { Event } from '../src/definitions.ts';
+import type { EventRecord } from '../src/definitions.ts';
 
-function clean(events: Event[], t: TestContext) {
+function clean(events: EventRecord[], t: TestContext) {
     t.mock.method(console, 'log', () => {});
     return cleanEvents(events);
 }

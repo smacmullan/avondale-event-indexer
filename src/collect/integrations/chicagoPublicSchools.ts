@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Event, EventIntegration } from '../../definitions.ts';
+import type { EventRecord, EventIntegration } from '../../definitions.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -17,7 +17,7 @@ export const chicagoPublicSchoolsIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // The API filters by date range, so no post-filtering is needed.
         // put dates into YYYY-MM-DD format
         const today = new Date().toISOString().split('T')[0];
@@ -30,11 +30,11 @@ export const chicagoPublicSchoolsIntegration = {
 
         const atSchool = cpsEvents.filter(event =>
             event.extendedProps?.eventLocationTitle?.includes(options.schoolName));
-        return standardizeAll(atSchool, standardizeCpsEvent, org.name);
+        return standardizeAll(atSchool, standardizeCpsEvent, source.name);
     },
 } satisfies EventIntegration<ChicagoPublicSchoolsOptions>;
 
-function standardizeCpsEvent(event: any): Event {
+function standardizeCpsEvent(event: any): EventRecord {
     return {
         name: event.title,
         startDate: event.start,

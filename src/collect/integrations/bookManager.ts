@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { Event, EventIntegration, Organization } from '../../definitions.ts';
-import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import type { EventRecord, EventIntegration, EventSource } from '../../definitions.ts';
+import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -17,11 +17,11 @@ export const bookManagerIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         const { storeId, baseUrl } = await getStoreInfo(options.webstoreName);
         const rows = await getBookManagerEventsFromApi(storeId);
 
-        const events = standardizeAll(rows, row => standardizeBookManagerEvent(row, org, baseUrl), org.name);
+        const events = standardizeAll(rows, row => standardizeBookManagerEvent(row, source, baseUrl), source.name);
 
         // The API can't filter by date, so filter here.
         return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
@@ -62,13 +62,13 @@ async function getBookManagerEventsFromApi(storeId: string): Promise<any[]> {
     return data.rows;
 }
 
-function standardizeBookManagerEvent(event: any, org: Organization, baseUrl?: string): Event {
+function standardizeBookManagerEvent(event: any, source: EventSource, baseUrl?: string): EventRecord {
     return {
         name: event.title,
         startDate: convertBookManagerDateToIsoString(event.date, event.start_time),
         endDate: event.end_time ? convertBookManagerDateToIsoString(event.date, event.end_time) : undefined,
         organizer: {
-            name: org.name,
+            name: source.name,
         },
         url: baseUrl ? `${baseUrl}/events/${event.id}` : undefined,
     };

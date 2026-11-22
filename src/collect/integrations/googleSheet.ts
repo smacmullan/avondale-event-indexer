@@ -1,8 +1,8 @@
 import { google } from 'googleapis';
 import { z } from 'zod';
-import type { Event, EventIntegration } from '../../definitions.ts';
-import { getEventSeriesStartDates } from '../eventSeries.ts';
-import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import { getEventSeriesStartDates } from '../../utils/eventSeries.ts';
+import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 process.loadEnvFile();
 
 const optionsSchema = z.object({
@@ -52,7 +52,7 @@ export const googleSheetIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         const apiKey = process.env.GOOGLE_API_KEY;
         if (!apiKey)
             throw new Error('GOOGLE_API_KEY is not set');
@@ -68,7 +68,7 @@ export const googleSheetIntegration = {
         const dataRows = rows.slice(1); // drop header row
 
         // A bad row only skips that row. User-submitted data is the likeliest to have gaps.
-        const events: Event[] = [];
+        const events: EventRecord[] = [];
         dataRows.forEach((row, i) => {
             if (!row.some(cell => cell?.trim()))
                 return; // blank row
@@ -76,7 +76,7 @@ export const googleSheetIntegration = {
                 events.push(...rowToEvents(row, endSearchDate));
             } catch (error) {
                 const sheetRowNumber = i + 2; // +1 for header, +1 for 1-based rows
-                console.error(`[${org.name}] Skipping sheet row ${sheetRowNumber}:`,
+                console.error(`[${source.name}] Skipping sheet row ${sheetRowNumber}:`,
                     error instanceof Error ? error.message : error);
             }
         });
@@ -110,7 +110,7 @@ function sheetStringToDate(dateStr: string | undefined, allDay = false): string 
 }
 
 /** Throws on rows that can't produce a valid event; the caller logs and skips them. */
-function rowToEvents(row: string[], endSearchDate: Date): Event[] {
+function rowToEvents(row: string[], endSearchDate: Date): EventRecord[] {
     if (!row[COL.name]?.trim())
         throw new Error('missing event name');
     if (!row[COL.start]?.trim())
@@ -122,7 +122,7 @@ function rowToEvents(row: string[], endSearchDate: Date): Event[] {
         : [rowToSingleEvent(row)];
 }
 
-function rowToSingleEvent(row: string[]): Event {
+function rowToSingleEvent(row: string[]): EventRecord {
     const isAllDay = row[COL.allDay]?.trim() === 'Yes';
     return {
         name: row[COL.name],
@@ -135,7 +135,7 @@ function rowToSingleEvent(row: string[]): Event {
     };
 }
 
-function rowToEventSeries(row: string[], endSearchDate: Date): Event[] {
+function rowToEventSeries(row: string[], endSearchDate: Date): EventRecord[] {
     const isAllDay = row[COL.allDay]?.trim() === 'Yes';
     const scheduleEndString = row[COL.repeatStop];
 

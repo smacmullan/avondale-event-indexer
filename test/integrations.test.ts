@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { google } from 'googleapis';
-import { fetchGoogleCalendarEvents } from '../src/utils/eventApis/googleCalendar.ts';
-import { standardizeJsonLdEvent } from '../src/utils/eventApis/jsonLd.ts';
-import { fetchWebCalEvents } from '../src/utils/eventApis/webcal.ts';
+import { fetchGoogleCalendarEvents } from '../src/utils/integrations/googleCalendar.ts';
+import { standardizeJsonLdEvent } from '../src/utils/integrations/jsonLd.ts';
+import { fetchWebCalEvents } from '../src/utils/integrations/webcal.ts';
 
 function upcomingDate(daysAhead: number) {
     const date = new Date();
@@ -79,7 +79,7 @@ test('JSON-LD integration', async t => {
         return new Response(eventHtml);
     });
 
-    const { fetchJsonLdEvents } = await import('../src/utils/eventApis/jsonLd.ts');
+    const { fetchJsonLdEvents } = await import('../src/utils/integrations/jsonLd.ts');
     const events = await fetchJsonLdEvents(
         { name: 'Local Org', eventApiType: 'jsonLd', api: 'https://example.test/events' },
         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),

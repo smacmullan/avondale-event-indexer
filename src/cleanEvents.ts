@@ -1,5 +1,5 @@
 import { eventSort } from './utils/time.ts';
-import type { Event } from './definitions.ts';
+import type { EventRecord } from './definitions.ts';
 
 // import list of events to filter out from the list
 import filterList from '../config/filterList.json' with { type: 'json' };
@@ -7,7 +7,7 @@ const filterSet = new Set(
     filterList.map(f => `${f.name.trim()}||${f.organizer}`)
 );
 
-export function cleanEvents(events: Event[]) {
+export function cleanEvents(events: EventRecord[]) {
     console.log("Cleaning event data...");
 
     console.log("Removing events...")
@@ -25,7 +25,7 @@ export function cleanEvents(events: Event[]) {
 /** 
 * Remove non-events and common duplicates. 
 */
-function removeEvents(events: Event[]): Event[] {
+function removeEvents(events: EventRecord[]): EventRecord[] {
     events = events.filter(event => {
         let eventName = event.name as string;
 
@@ -48,7 +48,7 @@ function removeEvents(events: Event[]): Event[] {
 }
 
 
-function trimLocationFromEventName(event: Event): Event {
+function trimLocationFromEventName(event: EventRecord): EventRecord {
     let eventName = event.name as string;
     // Trim ends off of events containing "@", "—", or "at"
     const renamePatterns = ['@', '—', ' at ', ' At '];
@@ -71,7 +71,7 @@ function trimLocationFromEventName(event: Event): Event {
  * Normalize events that span multiple days by clamping the end date
  * to the same day as the start date.
  */
-function normalizeEventDuration(event: Event): Event {
+function normalizeEventDuration(event: EventRecord): EventRecord {
     if (!event.startDate || !event.endDate)
         return event;
 

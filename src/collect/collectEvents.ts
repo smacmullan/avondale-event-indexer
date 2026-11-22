@@ -1,5 +1,5 @@
-import { getEndOfWeek } from './utils/time.ts';
-import type { Event, Organization } from './definitions.ts';
+import { getEndOfWeek } from '../utils/time.ts';
+import type { EventRecord, EventSource } from '../definitions.ts';
 import type { IntegrationRegistry } from './integrationRegistry.ts';
 import { defaultRegistry } from './defaultRegistry.ts';
 
@@ -11,15 +11,15 @@ export type IndexOptions = {
 };
 
 /**
- * Fetch events for a single organization. Kept for scripts/tests that call it directly.
+ * Fetch events for a single source. Kept for scripts/tests that call it directly.
  * Never throws: failures are logged by the registry and yield [].
  */
 export async function fetchEvents(
-    org: Organization,
+    source: EventSource,
     weeksOut = 2,
     registry: IntegrationRegistry = defaultRegistry,
-): Promise<Event[]> {
-    return registry.fetchEvents(org, getEndOfWeek(weeksOut));
+): Promise<EventRecord[]> {
+    return registry.fetchEvents(source, getEndOfWeek(weeksOut));
 }
 
 class FetchProgressTracker {
@@ -37,7 +37,7 @@ class FetchProgressTracker {
     }
 
     private render() {
-        process.stdout.write(`\rFetched events for ${this.completed}/${this.total} organizations...`);
+        process.stdout.write(`\rFetched events for ${this.completed}/${this.total} sources...`);
     }
 
     clear() {
@@ -45,21 +45,21 @@ class FetchProgressTracker {
     }
 }
 
-export async function indexEvents(
-    organizations: Organization[],
+export async function collectEvents(
+    sources: EventSource[],
     { registry = defaultRegistry, weeksOut = 2 }: IndexOptions = {},
-): Promise<Event[]> {
+): Promise<EventRecord[]> {
 
     // console logging of indexing progress
     console.log("Getting event data...");
-    const tracker = new FetchProgressTracker(organizations.length);
+    const tracker = new FetchProgressTracker(sources.length);
 
-    // compute the cutoff once so every organization uses the same end date
+    // compute the cutoff once so every source uses the same end date
     const endSearchDate = getEndOfWeek(weeksOut);
 
-    // registry.fetchEvents never rejects, so one failing org can't sink the rest
-    const eventPromises = organizations.map(org =>
-        registry.fetchEvents(org, endSearchDate).then(events => {
+    // registry.fetchEvents never rejects, so one failing source can't sink the rest
+    const eventPromises = sources.map(source =>
+        registry.fetchEvents(source, endSearchDate).then(events => {
             tracker.finish();
             return events;
         })

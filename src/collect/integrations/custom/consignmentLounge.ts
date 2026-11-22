@@ -1,4 +1,4 @@
-import type { Event } from '../../../definitions.ts';
+import type { EventRecord } from '../../../definitions.ts';
 import { googleCalendarIntegration } from '../googleCalendar.ts';
 import { withTransform } from '../../integrationHelpers.ts';
 
@@ -24,7 +24,7 @@ type TimeParts = {
     minute: number;
 };
 
-export function cleanupEventTime(event: Event): Event {
+export function cleanupEventTime(event: EventRecord): EventRecord {
     try {
         // Always remove the original endDate first (always next day string)
         const cleanedEvent = {

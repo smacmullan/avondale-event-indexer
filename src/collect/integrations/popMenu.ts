@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Event, EventIntegration, Organization } from '../../definitions.ts';
+import type { EventRecord, EventIntegration, EventSource } from '../../definitions.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
@@ -19,7 +19,7 @@ export const popMenuIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // The query filters by date range, so no post-filtering is needed.
         const today = new Date(new Date().setHours(0, 0, 0, 0)); // today at 00:00
 
@@ -54,19 +54,19 @@ export const popMenuIntegration = {
 
         return standardizeAll(
             singleInstanceEventData,
-            (event: any) => standardizePopMenuEvent(event, org, options),
-            org.name,
+            (event: any) => standardizePopMenuEvent(event, source, options),
+            source.name,
         );
     },
 } satisfies EventIntegration<PopMenuOptions>;
 
-function standardizePopMenuEvent(event: any, org: Organization, options: PopMenuOptions): Event {
+function standardizePopMenuEvent(event: any, source: EventSource, options: PopMenuOptions): EventRecord {
     return {
         name: event.name,
         startDate: getISODateString(event.startAt, event.startTime),
         endDate: getISODateString(event.endAt || event.startAt, event.endTime),
         organizer: {
-            name: org.name,
+            name: source.name,
         },
         url: `${options.url}/events/${event.slug}`,
     };

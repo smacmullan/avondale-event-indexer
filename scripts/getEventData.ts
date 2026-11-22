@@ -1,6 +1,6 @@
 import fs from 'fs';
-import { indexEvents } from "../src/indexEvents.ts";
-import type { Organization } from '../src/definitions.ts';
+import { collectEvents } from "../src/collect/collectEvents.ts";
+import type { EventSource } from '../src/definitions.ts';
 
-const organizations : Organization[] = JSON.parse(fs.readFileSync('config/organizations.json', 'utf-8'));
-let events = await indexEvents(organizations);
+const sources : EventSource[] = JSON.parse(fs.readFileSync('config/sources.json', 'utf-8'));
+let events = await collectEvents(sources);

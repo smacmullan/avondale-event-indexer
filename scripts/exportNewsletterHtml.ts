@@ -1,10 +1,10 @@
 import fs from 'fs';
 import { formatTimeRange, formatDay, isISODate, getDateFromISODate } from '../src/utils/time.ts';
-import type { Event } from '../src/definitions.ts';
+import type { EventRecord } from '../src/definitions.ts';
 
 export function generateNewsletterHtml(filePath = "output/newsletterEvents.html") {
 
-    let events = JSON.parse(fs.readFileSync('./output/events.json', 'utf-8')) as Event[];
+    let events = JSON.parse(fs.readFileSync('./output/events.json', 'utf-8')) as EventRecord[];
     events = filterEventsForUpcomingWeek(events);
     
     let currentDay = '';
@@ -41,7 +41,7 @@ export function generateNewsletterHtml(filePath = "output/newsletterEvents.html"
     }
 }
 
-function filterEventsForUpcomingWeek(events: Event[]): Event[] {
+function filterEventsForUpcomingWeek(events: EventRecord[]): EventRecord[] {
     const now = new Date();
     // Calculate upcoming Monday: if today is Monday, diff will be 0.
     const diffToMonday = (1 - now.getDay() + 7) % 7;

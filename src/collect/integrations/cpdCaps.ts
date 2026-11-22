@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { Event, EventIntegration } from '../../definitions.ts';
-import PuppeteerQueueManager from '../puppeteerQueueManager.ts';
+import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import PuppeteerQueueManager from '../../utils/puppeteerQueueManager.ts';
 import { standardizeAll } from '../integrationHelpers.ts';
 
 const DEFAULT_CALENDAR_URL = 'https://www.chicagopolice.org/community-engagement-calendar/';
@@ -19,7 +19,7 @@ export const cpdCapsIntegration = {
 
     parseOptions: raw => optionsSchema.parse(raw),
 
-    async fetchEvents({ org, options, endSearchDate }) {
+    async fetchEvents({ source, options, endSearchDate }) {
         // The API filters by date range, so no post-filtering is needed.
         // put dates into Unix timestamp format in seconds
         const today = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000); // today at 00:00
@@ -36,7 +36,7 @@ export const cpdCapsIntegration = {
             .filter((event: any) => isEventInBeats(event, policeBeats))
             .filter(isCapsEvent);
 
-        return standardizeAll(relevantEvents, event => standardizeCpdCapsEvent(event, options.eventPageUrl), org.name);
+        return standardizeAll(relevantEvents, event => standardizeCpdCapsEvent(event, options.eventPageUrl), source.name);
     },
 } satisfies EventIntegration<CpdCapsOptions>;
 
@@ -69,7 +69,7 @@ function isCapsEvent(event: any): boolean {
         || (event.body ?? '').toUpperCase().includes("CAPS");
 }
 
-function standardizeCpdCapsEvent(event: any, eventPageUrl: string): Event {
+function standardizeCpdCapsEvent(event: any, eventPageUrl: string): EventRecord {
     return {
         name: event.title,
         startDate: event.start,
