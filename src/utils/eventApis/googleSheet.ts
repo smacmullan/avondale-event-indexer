@@ -1,13 +1,22 @@
 import { google } from 'googleapis';
-import dotenv from 'dotenv';
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration } from '../../definitions.ts';
 import { getEventSeriesStartDates } from '../eventSeries.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
-dotenv.config();
+process.loadEnvFile();
+
+const optionsSchema = z.object({
+    /** Google Sheet ID (the long string in the sheet's URL). Must be readable with the API key. */
+    sheetId: z.string().min(1),
+    /** Name of the tab holding the form responses */
+    tab: z.string().min(1).default('Event Submissions'),
+}).strict();
+
+export type GoogleSheetOptions = z.infer<typeof optionsSchema>;
 
 /*
-This API expects sheet data to have the following columns in the following order:
-  [
+This integration expects the sheet to have the following columns in this order
+(zero-based index in COL below):
     'Timestamp',
     'Contact Information',
     'Event Name',
@@ -23,140 +32,156 @@ This API expects sheet data to have the following columns in the following order
     'Days of the Week',
     'Monthly Occurrence',
     'Repeat Stop Date'
-  ]
 */
+const COL = {
+    name: 2,
+    organizer: 3,
+    link: 4,
+    start: 7,
+    end: 8,
+    allDay: 9,
+    repeating: 10,
+    frequency: 11,
+    byDay: 12,
+    monthlyOccurrence: 13,
+    repeatStop: 14,
+} as const;
 
-export async function fetchGoogleSheetEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        // get event data from spreadsheet
-        const sheetId = org.api;
-        let rows = await getSheetData(sheetId);
-        if (!rows || rows.length < 2)
-            return [];
+export const googleSheetIntegration = {
+    type: 'googleSheet',
 
-        rows.shift(); // drop header row
-        let events = getEventsFromRows(rows, endSearchDate);
-        events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
-        return events;
-    } catch (error) {
-        console.error(`Error fetching Google sheet events.`, error);
-        return [];
-    }
-}
+    parseOptions: raw => optionsSchema.parse(raw),
 
-async function getSheetData(sheetId: string) {
-    try {
-        const sheets = google.sheets({ version: 'v4', auth: process.env.GOOGLE_API_KEY });
+    async fetchEvents({ org, options, endSearchDate }) {
+        const apiKey = process.env.GOOGLE_API_KEY;
+        if (!apiKey)
+            throw new Error('GOOGLE_API_KEY is not set');
+
+        // Errors here (bad sheet ID, no access, bad tab name) propagate to the registry.
+        const sheets = google.sheets({ version: 'v4', auth: apiKey });
         const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: sheetId,
-            range: 'Event Submissions', // Name of the sheet
+            spreadsheetId: options.sheetId,
+            range: options.tab,
         });
 
-        const rows = response.data.values;
-        return rows;
-    } catch (err) {
-        console.error('Error fetching data:', err);
-        return [];
-    }
-}
+        const rows: string[][] = response.data.values ?? [];
+        const dataRows = rows.slice(1); // drop header row
 
-function sheetStringtoDate(dateStr: string, allDay = false) {
+        // A bad row only skips that row. User-submitted data is the likeliest to have gaps.
+        const events: Event[] = [];
+        dataRows.forEach((row, i) => {
+            if (!row.some(cell => cell?.trim()))
+                return; // blank row
+            try {
+                events.push(...rowToEvents(row, endSearchDate));
+            } catch (error) {
+                const sheetRowNumber = i + 2; // +1 for header, +1 for 1-based rows
+                console.error(`[${org.name}] Skipping sheet row ${sheetRowNumber}:`,
+                    error instanceof Error ? error.message : error);
+            }
+        });
 
-    if (!dateStr)
+        // The Sheets API can't filter by date, so filter here.
+        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    },
+} satisfies EventIntegration<GoogleSheetOptions>;
+
+/** Parses "M/D/YYYY" or "M/D/YYYY H:MM:SS". Returns YYYY-MM-DD for all-day/date-only, else an ISO datetime. */
+function sheetStringToDate(dateStr: string | undefined, allDay = false): string | undefined {
+    if (!dateStr?.trim())
         return undefined;
 
-    let [datePart, timePart] = dateStr.split(' ');
-    let [month, day, year] = datePart.split('/').map(Number);
+    const [datePart, timePart] = dateStr.trim().split(' ');
+    const [month, day, year] = datePart.split('/').map(Number);
+    if (![month, day, year].every(Number.isFinite))
+        throw new Error(`Unrecognized date "${dateStr}"`);
 
     if (!timePart || allDay) {
-        let monthString = month.toString().padStart(2, '0');
-        let dayString = day.toString().padStart(2, '0');
+        const monthString = month.toString().padStart(2, '0');
+        const dayString = day.toString().padStart(2, '0');
         return `${year}-${monthString}-${dayString}`;
     }
-    else {
-        const [hours, minutes, seconds] = timePart.split(':').map(Number);
-        return new Date(year, month - 1, day, hours, minutes, seconds).toISOString();
-    }
+
+    const [hours, minutes, seconds = 0] = timePart.split(':').map(Number);
+    const date = new Date(year, month - 1, day, hours, minutes, seconds);
+    if (Number.isNaN(date.getTime()))
+        throw new Error(`Unrecognized date/time "${dateStr}"`);
+    return date.toISOString();
 }
 
-function getEventsFromRows(rows: string[][], endSearchDate: Date): Event[] {
-    let eventData = rows.map((row: any) => rowToEvent(row, endSearchDate));
-    return eventData.flat();
-}
+/** Throws on rows that can't produce a valid event; the caller logs and skips them. */
+function rowToEvents(row: string[], endSearchDate: Date): Event[] {
+    if (!row[COL.name]?.trim())
+        throw new Error('missing event name');
+    if (!row[COL.start]?.trim())
+        throw new Error(`missing start date for "${row[COL.name]}"`);
 
-function rowToEvent(row: string[], endSearchDate: Date): (Event | Event[]) {
-    const isRepeating = (row[10]?.trim() === "Repeating");
-
-    if (isRepeating)
-        return rowToEventSeries(row, endSearchDate);
-    else
-        return rowToSingleEvent(row);
+    const isRepeating = row[COL.repeating]?.trim() === 'Repeating';
+    return isRepeating
+        ? rowToEventSeries(row, endSearchDate)
+        : [rowToSingleEvent(row)];
 }
 
 function rowToSingleEvent(row: string[]): Event {
-    const isAllDay = (row[9]?.trim() === "Yes");
+    const isAllDay = row[COL.allDay]?.trim() === 'Yes';
     return {
-        name: row[2],
-        startDate: sheetStringtoDate(row[7], isAllDay) || '',
-        endDate: sheetStringtoDate(row[8], isAllDay),
+        name: row[COL.name],
+        startDate: sheetStringToDate(row[COL.start], isAllDay)!, // presence checked in rowToEvents
+        endDate: sheetStringToDate(row[COL.end], isAllDay),
         organizer: {
-            name: row[3],
+            name: row[COL.organizer],
         },
-        url: row[4] || undefined,
-    }
-};
+        url: row[COL.link] || undefined,
+    };
+}
 
 function rowToEventSeries(row: string[], endSearchDate: Date): Event[] {
+    const isAllDay = row[COL.allDay]?.trim() === 'Yes';
+    const scheduleEndString = row[COL.repeatStop];
 
-    const scheduleStartString = row[7];
-    const isAllDay = (row[9] === "Yes");
-    const monthlyOccurenceString = row[13];
-    const scheduleEndString = row[14];
-
-    let schedule = {
-        startDate: sheetStringtoDate(scheduleStartString) as string,
-        endDate: scheduleEndString ? sheetStringtoDate(scheduleEndString) as string : endSearchDate.toISOString(),
-        frequency: row[11],
-        byDay: row[12],
-        monthlyOccurence: monthlyOccurenceString || undefined,
+    const schedule = {
+        startDate: sheetStringToDate(row[COL.start]) as string,
+        endDate: scheduleEndString ? sheetStringToDate(scheduleEndString) as string : endSearchDate.toISOString(),
+        frequency: row[COL.frequency],
+        byDay: row[COL.byDay],
+        monthlyOccurence: row[COL.monthlyOccurrence] || undefined,
     };
-    let now = new Date();
+    const now = new Date();
 
-    let seriesStartDates = getEventSeriesStartDates(schedule, now, endSearchDate);
+    const seriesStartDates = getEventSeriesStartDates(schedule, now, endSearchDate);
 
     return seriesStartDates.map((startDate: Date) => {
 
         let startDateString = startDate.toISOString();
-        if(isAllDay)
+        if (isAllDay)
             startDateString = startDateString.split('T')[0]; // remove time from end of string
 
         // logic for figuring out instance end date string
-        const firstInstanceEndDateString = sheetStringtoDate(row[8], isAllDay);
-        let endDateString = undefined;
+        const firstInstanceEndDateString = sheetStringToDate(row[COL.end], isAllDay);
+        let endDateString: string | undefined;
         if (!firstInstanceEndDateString)
             endDateString = undefined;
         else if (isAllDay)
-            endDateString = startDateString
-        else{
+            endDateString = startDateString;
+        else {
             // TODO only works when the event starts and ends on the same day
             // get date from instance start date
-            let dateString = startDateString.split('T')[0];
+            const dateString = startDateString.split('T')[0];
             // get time from first instance end time
-            let timeString = firstInstanceEndDateString.split('T')[1];
+            const timeString = firstInstanceEndDateString.split('T')[1];
             // combine
-            endDateString = `${dateString}T${timeString}`
+            endDateString = `${dateString}T${timeString}`;
         }
 
         // use instance start and end date to create event
         return {
-            name: row[2],
+            name: row[COL.name],
             startDate: startDateString,
             endDate: endDateString,
             organizer: {
-                name: row[3],
+                name: row[COL.organizer],
             },
-            url: row[4] || undefined,
-        }
-    })
-};
-
+            url: row[COL.link] || undefined,
+        };
+    });
+}

@@ -1,66 +1,78 @@
 import * as cheerio from 'cheerio';
+import { z } from 'zod';
 import type { Page } from 'puppeteer';
 import { decodeHtmlEntities } from '../html.ts';
-import type { Organization, Event } from '../../definitions.ts';
+import type { Organization, Event, EventIntegration } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
 import PuppeteerQueueManager from '../puppeteerQueueManager.ts';
 
-// Function to scrape JSON-LD data from all event pages
-export async function fetchJsonLdEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
+const optionsSchema = z.object({
+    /** The event "hub" page that links to individual event pages */
+    url: z.url(),
+    /** Event links ending with any of these are ignored */
+    linkBlockList: z.array(z.string()).optional(),
+    /** If set, only links containing this string count as event links */
+    eventLinkMustInclude: z.string().optional(),
+    /** The hub page needs a headless browser to render its links */
+    hubPageRequiresRendering: z.boolean().default(false),
+    /** The individual event pages need a headless browser to render their JSON-LD */
+    eventPagesRequireRendering: z.boolean().default(false),
+}).strict();
 
-    let eventLinks: string[];
-    if (org.jsonLdHubPageRequiresRendering)
-        eventLinks = await extractEventLinksFromRenderedPage(org);
-    else
-        eventLinks = await extractEventLinksFromHtml(org);
+export type JsonLdOptions = z.infer<typeof optionsSchema>;
 
-    // Concurrently get event data from individual event pages with queue/rate limiting
-    let allEventData = [];
-    if (org.jsonLdEventPagesRequireRendering) {
-        // Use queue manager to control concurrent puppeteer operations
-        const queueManager = PuppeteerQueueManager.getInstance();
-        allEventData = await Promise.all(
-            eventLinks.map(async (link) => {
-                try {
-                    return await queueManager.queuePageOperation(async (page) => {
-                        return await extractJsonLdEventsFromRenderedPage(page, link, org);
-                    });
-                } catch (error) {
-                    console.error(`[${org.name}] Error processing event page: ${link}`, error instanceof Error ? error.message : error);
-                    return null;
-                }
-            })
-        );
-    }
-    else {
-        // get JSON LD data from static HTML with cheerio
-        allEventData = await Promise.all(
-            eventLinks.map(async (link) => {
-                // Create a new URL by appending the subdirectory to the original URL
-                const fullUrl = new URL(link, org.api).toString();
-                try {
-                    return await extractJsonLdEventsFromHtml(fullUrl, org);
-                } catch (error) {
-                    console.error(`[${org.name}] Error processing event page: ${fullUrl}`, error instanceof Error ? error.message : error);
-                    return null;
-                }
-            })
-        );
-    }
+export const jsonLdIntegration = {
+    type: 'jsonLd',
 
-    // Filter out any null values and flatten sub-arrays into single array
-    allEventData = allEventData.filter((eventData: any) => eventData !== null);
-    allEventData = allEventData.flat();
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        // Failing to load the hub page throws (whole integration fails).
+        const hubLinks = options.hubPageRequiresRendering
+            ? await extractEventLinksFromRenderedPage(options, org)
+            : await extractEventLinksFromHtml(options);
+
+        // Resolve relative links against the hub page so both fetch paths get absolute URLs
+        const eventLinks = [...new Set(hubLinks.map(link => new URL(link, options.url).toString()))];
+
+        // From here on, a failure on one event page only skips that page.
+        let allEventData: any[];
+        if (options.eventPagesRequireRendering) {
+            // Use queue manager to control concurrent puppeteer operations
+            const queueManager = PuppeteerQueueManager.getInstance();
+            allEventData = await Promise.all(
+                eventLinks.map(async (link) => {
+                    try {
+                        return await queueManager.queuePageOperation(async (page) => {
+                            return await extractJsonLdEventsFromRenderedPage(page, link, org);
+                        });
+                    } catch (error) {
+                        console.error(`[${org.name}] Error processing event page: ${link}`, error instanceof Error ? error.message : error);
+                        return null;
+                    }
+                })
+            );
+        }
+        else {
+            // get JSON LD data from static HTML with cheerio
+            allEventData = await Promise.all(
+                eventLinks.map(link => extractJsonLdEventsFromHtml(link, org))
+            );
+        }
+
+        // Filter out any null values and flatten sub-arrays into single array
+        const rawEvents = allEventData.filter(eventData => eventData !== null).flat();
+
+        // This source can't pre-filter by date, so filter here.
+        let events = rawEvents.map((event: any) => standardizeJsonLdEvent(event, org));
+        events = events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
+        return deduplicateEvents(events);
+    },
+} satisfies EventIntegration<JsonLdOptions>;
 
 
-    let events = allEventData.map((event: any) => standardizeJsonLdEvent(event, org));
-    events = events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
-    events = deduplicateEvents(events);
-    return events;
-}
-
-
-async function extractJsonLdEventsFromHtml(url: string, org?: Organization) {
+/** Returns null (and logs) if the page can't be fetched, so one bad page doesn't sink the rest. */
+async function extractJsonLdEventsFromHtml(url: string, org: Organization): Promise<any[] | null> {
     try {
         const response = await fetch(url);
         const data = await response.text();
@@ -71,29 +83,27 @@ async function extractJsonLdEventsFromHtml(url: string, org?: Organization) {
             const jsonLd = $(element).html();
             if (jsonLd) {
                 try {
-                    let jsonLdJSON = JSON.parse(jsonLd);
+                    const jsonLdJSON = JSON.parse(jsonLd);
                     if (jsonLdJSON && !jsonLdJSON.url)
                         jsonLdJSON.url = url;
 
                     jsonLdData.push(jsonLdJSON);
                 } catch (error) {
-                    console.error('Error parsing JSON-LD:', error);
+                    console.error(`[${org.name}] Error parsing JSON-LD on ${url}:`, error);
                 }
             }
         });
 
         jsonLdData = jsonLdData.flat();
-        const events = jsonLdData.filter(item => item['@type'] && item['@type'].includes("Event"));
-        return events;
+        return jsonLdData.filter(item => item['@type'] && item['@type'].includes("Event"));
     } catch (error) {
-        const orgName = org?.name || 'Unknown Organization';
-        console.error(`Error fetching a page for ${orgName} (${url}):`, error instanceof Error ? error.message : error);
+        console.error(`[${org.name}] Error fetching a page (${url}):`, error instanceof Error ? error.message : error);
         return null;
     }
 }
 
-async function extractJsonLdEventsFromRenderedPage(page: Page, url: string, org?: Organization) {
-    const orgName = org?.name || 'Unknown Organization';
+/** Returns null (and logs) if the page can't be processed. */
+async function extractJsonLdEventsFromRenderedPage(page: Page, url: string, org: Organization): Promise<any[] | null> {
     try {
         await page.goto(url, { waitUntil: 'load', timeout: 20000 });
 
@@ -116,74 +126,59 @@ async function extractJsonLdEventsFromRenderedPage(page: Page, url: string, org?
             }
         });
 
-        const events = jsonLdData.filter((item: any) => item['@type'] && item['@type'].includes('Event'));
-        return events;
+        return jsonLdData.filter((item: any) => item['@type'] && item['@type'].includes('Event'));
     } catch (error) {
-        console.error(`[${orgName}] Error processing event page: ${url}`, error instanceof Error ? error.message : error);
+        console.error(`[${org.name}] Error processing event page: ${url}`, error instanceof Error ? error.message : error);
         return null;
     }
 }
 
-async function extractEventLinksFromHtml(org: Organization): Promise<string[]> {
-    const eventHubPageUrl = org.api;
-    try {
-        // Get and load the html
-        const response = await fetch(eventHubPageUrl);
-        const data = await response.text();
-        const $ = cheerio.load(data);
+async function extractEventLinksFromHtml(options: JsonLdOptions): Promise<string[]> {
+    const response = await fetch(options.url);
+    if (!response.ok)
+        throw new Error(`Hub page "${options.url}" returned HTTP ${response.status}`);
 
-        // Get all event links on the page
-        let links: string[] = [];
-        $('a').each((i, element) => {
-            const link = $(element).attr('href');
-            if (link)
-                links.push(link);
-        });
+    const $ = cheerio.load(await response.text());
 
-        let eventLinks = filterLinksforEventLinks(links, org);
-        return eventLinks;
-    } catch (error) {
-        console.error(`Error fetching the main event page "${eventHubPageUrl}":`, error);
-        return [];
-    }
+    // Get all event links on the page
+    const links: string[] = [];
+    $('a').each((i, element) => {
+        const link = $(element).attr('href');
+        if (link)
+            links.push(link);
+    });
+
+    return filterLinksforEventLinks(links, options);
 }
 
+async function extractEventLinksFromRenderedPage(options: JsonLdOptions, org: Organization): Promise<string[]> {
+    const queueManager = PuppeteerQueueManager.getInstance();
+    return await queueManager.queuePageOperation(async (page) => {
+        const response = await page.goto(options.url, { waitUntil: 'networkidle0' });
+        if (response && !response.ok())
+            throw new Error(`[${org.name}] Hub page "${options.url}" returned HTTP ${response.status()}`);
 
-async function extractEventLinksFromRenderedPage(org: Organization): Promise<string[]> {
-    const eventHubPageUrl = org.api;
-    try {
-        const queueManager = PuppeteerQueueManager.getInstance();
-        const eventLinks = await queueManager.queuePageOperation(async (page) => {
-            await page.goto(eventHubPageUrl, { waitUntil: 'networkidle0' });
-
-            // Extract links dynamically rendered on the page
-            const links = await page.evaluate(() => {
-                return Array.from(document.querySelectorAll('a')).map(anchor => anchor.href);
-            });
-
-            return filterLinksforEventLinks(links, org);
+        // Extract links dynamically rendered on the page
+        const links = await page.evaluate(() => {
+            return Array.from(document.querySelectorAll('a')).map(anchor => anchor.href);
         });
 
-        return eventLinks;
-    } catch (error) {
-        console.error(`[${org.name}] Error processing hub page: ${eventHubPageUrl}`, error instanceof Error ? error.message : error);
-        return [];
-    }
+        return filterLinksforEventLinks(links, options);
+    });
 }
 
-
-function filterLinksforEventLinks(links: string[], org: Organization): string[] {
-    const eventHubPageUrl = org.api;
-    let baseDir = (new URL(eventHubPageUrl)).pathname;
+function filterLinksforEventLinks(links: string[], options: JsonLdOptions): string[] {
+    const eventHubPageUrl = options.url;
+    const baseDir = (new URL(eventHubPageUrl)).pathname;
 
     // filter for event links
     let eventLinks: string[] = [];
     links.forEach((link: string) => {
         if (link) {
-            const cleanLink = link.split('?')[0]; //remove query parameters
+            const cleanLink = link.split('?')[0]; // remove query parameters
 
-            if (org.jsonLdEventLinkMustInclude) {
-                if (cleanLink.includes(org.jsonLdEventLinkMustInclude))
+            if (options.eventLinkMustInclude) {
+                if (cleanLink.includes(options.eventLinkMustInclude))
                     eventLinks.push(cleanLink);
             }
             else {
@@ -202,7 +197,7 @@ function filterLinksforEventLinks(links: string[], org: Organization): string[] 
     eventLinks = eventLinks.filter(link => link !== eventHubPageUrl);
 
     // Filter out links on block list
-    let blockList = org.jsonLdLinkBlockList;
+    const blockList = options.linkBlockList;
     if (blockList) {
         eventLinks = eventLinks.filter(link =>
             !blockList.some(toRemove => link.endsWith(toRemove))
@@ -213,6 +208,7 @@ function filterLinksforEventLinks(links: string[], org: Organization): string[] 
 }
 
 
+// Exported unchanged: other integrations may reuse it.
 export function standardizeJsonLdEvent(event: any, org: Organization): Event {
     const { name, startDate, endDate, location, url } = event;
 

@@ -2,298 +2,396 @@
     {
         "name": "Avondale Gardening Alliance",
         "eventApiType": "googleCalendar",
-        "googleCalendarUseLocation": true,
-        "api": "0130a6e9ed7e9a08143a4105243a6e93f1f738a8a17d6c90a7af0f5d7bb24d2d@group.calendar.google.com",
         "dedupeRank": 3,
-        "eventPageUrl": "https://avondalegardeners.org/events"
+        "options": {
+            "useLocation": true,
+            "calendarId": "0130a6e9ed7e9a08143a4105243a6e93f1f738a8a17d6c90a7af0f5d7bb24d2d@group.calendar.google.com",
+            "eventPageUrl": "https://avondalegardeners.org/events"
+        }
     },
     {
         "name": "Reed's Local",
         "eventApiType": "googleCalendar",
-        "api": "reedslocaltap@gmail.com",
         "dedupeRank": 3,
-        "eventPageUrl": "https://reedslocal.com/events/"
+        "options": {
+            "calendarId": "reedslocaltap@gmail.com",
+            "eventPageUrl": "https://reedslocal.com/events/"
+        }
     },
     {
         "name": "Consignment Lounge",
         "eventApiType": "consignmentLounge",
-        "api": "9126428df9b2d09369486b0edc22fefda299ed3f2f45b4da777557902c662f3d@group.calendar.google.com",
-        "eventPageUrl": "https://www.consignmentlounge.com/calendar"
+        "options": {
+            "calendarId": "9126428df9b2d09369486b0edc22fefda299ed3f2f45b4da777557902c662f3d@group.calendar.google.com",
+            "eventPageUrl": "https://www.consignmentlounge.com/calendar"
+        }
     },
     {
         "name": "Sleeping Village",
         "eventApiType": "plot",
-        "api": "sleeping-village.com"
+        "options": {
+            "host": "sleeping-village.com"
+        }
     },
     {
         "name": "Firefly Fiber Arts Studio",
         "eventApiType": "jsonLd",
-        "api": "https://www.fireflyfiberarts.com/new-events-1",
-        "jsonLdHubPageRequiresRendering": true
+        "options": {
+            "url": "https://www.fireflyfiberarts.com/new-events-1",
+            "hubPageRequiresRendering": true
+        }
     },
     {
         "name": "Prism Games",
         "eventApiType": "jsonLd",
-        "api": "https://www.prismgameschicago.com/events"
+        "options": {
+            "url": "https://www.prismgameschicago.com/events"
+        }
     },
     {
         "name": "The Brewed",
         "eventApiType": "jsonLd",
-        "api": "https://www.thebrewedcoffee.com/events"
+        "options": {
+            "url": "https://www.thebrewedcoffee.com/events"
+        }
     },
     {
         "name": "Bric-a-Brac Records",
         "eventApiType": "jsonLd",
-        "api": "https://www.bricabracrecords.com/upcoming-events"
+        "options": {
+            "url": "https://www.bricabracrecords.com/upcoming-events"
+        }
     },
     {
         "name": "Insect Asylum",
         "eventApiType": "eventsCalendarCo",
-        "api": "plugin.eventscalendar.co/api/eventbrite/events?user=user_deg5cbAfk1s2z6e6Nqm7J&project=proj_kzcnLsblbDS6HB8f1RPe9&calendar=43421436193"
+        "options": {
+            "endpoint": "plugin.eventscalendar.co/api/eventbrite/events?user=user_deg5cbAfk1s2z6e6Nqm7J&project=proj_kzcnLsblbDS6HB8f1RPe9&calendar=43421436193"
+        }
     },
     {
         "name": "Bud & Rita's",
         "eventApiType": "jsonLd",
-        "api": "https://budandritas.com/events/",
-        "jsonLdLinkBlockList": [
-            "/events/list/",
-            "/events/month/",
-            "/events/today/"
-        ]
+        "options": {
+            "url": "https://budandritas.com/events/",
+            "linkBlockList": [
+                "/events/list/",
+                "/events/month/",
+                "/events/today/"
+            ]
+        }
     },
     {
         "name": "Late Bar",
         "eventApiType": "do312",
-        "api": "https://do312.com/venues/late-bar.json"
+        "options": {
+            "url": "https://do312.com/venues/late-bar.json"
+        }
     },
     {
         "name": "Athletic Field Park",
         "eventApiType": "jsonLd",
-        "api": "https://www.athleticfieldpark.com/community-events"
+        "options": {
+            "url": "https://www.athleticfieldpark.com/community-events"
+        }
     },
     {
         "name": "Unity Park",
         "eventApiType": "googleCalendar",
-        "api": "webmaster@unityparkchicago.org",
         "dedupeRank": 3,
-        "eventPageUrl": "https://www.unityparkchicago.org/events"
+        "options": {
+            "calendarId": "webmaster@unityparkchicago.org",
+            "eventPageUrl": "https://www.unityparkchicago.org/events"
+        }
     },
     {
         "name": "Hairpin Arts Center",
         "eventApiType": "hairpin",
-        "api": "https://www.hairpinartscenter.org/calendar"
+        "options": {
+            "url": "https://www.hairpinartscenter.org/calendar"
+        }
     },
     {
         "name": "Avondale Music Hall",
         "eventApiType": "do312",
-        "api": "https://do312.com/venues/avondale-music-hall.json"
+        "options": {
+            "url": "https://do312.com/venues/avondale-music-hall.json"
+        }
     },
     {
         "name": "Elastic Arts",
         "eventApiType": "jsonLd",
-        "api": "https://elasticarts.org/events"
+        "options": {
+            "url": "https://elasticarts.org/events"
+        }
     },
     {
         "name": "Rockwell on the River",
         "eventApiType": "jsonLd",
-        "api": "https://www.eventbrite.com/o/37541482633",
-        "jsonLdEventLinkMustInclude": "/e/",
-        "jsonLdHubPageRequiresRendering": true
+        "options": {
+            "url": "https://www.eventbrite.com/o/37541482633",
+            "eventLinkMustInclude": "/e/",
+            "hubPageRequiresRendering": true
+        }
     },
     {
         "name": "Guild Row",
         "eventApiType": "jsonLd",
-        "api": "https://www.eventbrite.com/o/guild-row-82425627613",
-        "jsonLdEventLinkMustInclude": "/e/",
-        "jsonLdHubPageRequiresRendering": true
+        "options": {
+            "url": "https://www.eventbrite.com/o/guild-row-82425627613",
+            "eventLinkMustInclude": "/e/",
+            "hubPageRequiresRendering": true
+        }
     },
     {
         "name": "Judson & Moore Distillery",
         "eventApiType": "jsonLd",
-        "api": "https://judsonandmoore.com/pages/events",
-        "jsonLdEventLinkMustInclude": "link",
-        "jsonLdHubPageRequiresRendering": true,
-        "jsonLdEventPagesRequireRendering": true
+        "options": {
+            "url": "https://judsonandmoore.com/pages/events",
+            "eventLinkMustInclude": "link",
+            "hubPageRequiresRendering": true,
+            "eventPagesRequireRendering": true
+        }
     },
     {
         "name": "Skunk Cabbage Books",
         "eventApiType": "bookManager",
-        "api": "9932593"
+        "options": {
+            "storeId": "9932593"
+        }
     },
     {
         "name": "Logandale School",
         "eventApiType": "chicagoPublicSchools",
-        "api": "Logandale"
+        "options": {
+            "schoolName": "Logandale"
+        }
     },
     {
         "name": "Oracle + Alchemy",
         "eventApiType": "offeringTree",
-        "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
-        "api": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=0f3fedcb-a7cb-43a2-80bf-4774959f9561"
+        "options": {
+            "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
+            "url": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=0f3fedcb-a7cb-43a2-80bf-4774959f9561"
+        }
     },
     {
         "name": "Oracle + Alchemy",
         "eventApiType": "offeringTree",
-        "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
-        "api": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=4db3610e-2828-4409-b7d7-f8b5e9b18c33"
+        "options": {
+            "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
+            "url": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=4db3610e-2828-4409-b7d7-f8b5e9b18c33"
+        }
     },
     {
         "name": "Oracle + Alchemy",
         "eventApiType": "offeringTree",
-        "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
-        "api": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=96dc7008-eaa6-46dc-b219-1529fb59517f"
+        "options": {
+            "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
+            "url": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=96dc7008-eaa6-46dc-b219-1529fb59517f"
+        }
     },
     {
         "name": "Oracle + Alchemy",
         "eventApiType": "offeringTree",
-        "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
-        "api": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=ce6e67a0-592b-4cf2-9a62-6f7f7650d655"
+        "options": {
+            "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
+            "url": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=ce6e67a0-592b-4cf2-9a62-6f7f7650d655"
+        }
     },
     {
         "name": "Uprising Theater",
         "eventApiType": "jsonLd",
-        "api": "https://www.eventbrite.com/o/uprising-theater-119988594591",
-        "jsonLdEventLinkMustInclude": "/e/",
-        "jsonLdHubPageRequiresRendering": true
+        "options": {
+            "url": "https://www.eventbrite.com/o/uprising-theater-119988594591",
+            "eventLinkMustInclude": "/e/",
+            "hubPageRequiresRendering": true
+        }
     },
     {
         "name": "Chicago Police CAPS Meetings",
         "eventApiType": "cpdCaps",
-        "eventPageUrl": "https://www.chicagopolice.org/community-engagement-calendar/",
         "dedupeRank": 3,
-        "api": "1411,1412,1732,1733,2523"
+        "options": {
+            "eventPageUrl": "https://www.chicagopolice.org/community-engagement-calendar/",
+            "beatIds": [1411, 1412, 1732, 1733, 2523]
+        }
     },
     {
         "name": "Avondale Block Parties",
         "eventApiType": "chicagoBlockParties",
         "dedupeRank": 3,
-        "api": "22"
+        "options": {
+            "neighborhoodId": "22"
+        }
     },
     {
         "name": "Pumping Station One",
         "eventApiType": "googleCalendar",
-        "api": "hhlp4gcgvdmifq5lcbk7e27om4@group.calendar.google.com",
         "dedupeRank": 3,
-        "eventPageUrl": "https://pumpingstationone.org/events"
+        "options": {
+            "calendarId": "hhlp4gcgvdmifq5lcbk7e27om4@group.calendar.google.com",
+            "eventPageUrl": "https://pumpingstationone.org/events"
+        }
     },
     {
         "name": "Honey Butter Fried Chicken",
         "eventApiType": "jsonLd",
-        "api": "https://www.honeybutter.com/events"
+        "options": {
+            "url": "https://www.honeybutter.com/events"
+        }
     },
     {
         "name": "Avondale Arts",
         "eventApiType": "jsonLd",
-        "api": "https://www.eventbrite.com/o/avondale-arts-chicago-89841749603",
-        "jsonLdEventLinkMustInclude": "/e/",
-        "jsonLdHubPageRequiresRendering": true
+        "options": {
+            "url": "https://www.eventbrite.com/o/avondale-arts-chicago-89841749603",
+            "eventLinkMustInclude": "/e/",
+            "hubPageRequiresRendering": true
+        }
     },
     {
         "name": "Avondale Mutual Aid",
         "eventApiType": "jsonLd",
-        "api": "https://www.eventbrite.com/o/118946571131",
-        "jsonLdEventLinkMustInclude": "/e/",
-        "jsonLdHubPageRequiresRendering": true
+        "options": {
+            "url": "https://www.eventbrite.com/o/118946571131",
+            "eventLinkMustInclude": "/e/",
+            "hubPageRequiresRendering": true
+        }
     },
     {
         "name": "Five Point Holistic Health",
         "eventApiType": "jsonLd",
-        "api": "https://www.fivepointholistichealth.com/events"
+        "options": {
+            "url": "https://www.fivepointholistichealth.com/events"
+        }
     },
     {
         "name": "Moody's Market",
         "eventApiType": "jsonLd",
-        "api": "https://www.moodysmarket.com/moodyclasses"
+        "options": {
+            "url": "https://www.moodysmarket.com/moodyclasses"
+        }
     },
     {
         "name": "Chief O'Neill's",
         "eventApiType": "popMenu",
-        "api": "https://www.chiefoneillspub.com"
+        "options": {
+            "url": "https://www.chiefoneillspub.com"
+        }
     },
     {
         "name": "LoSAH Center of Hope",
         "eventApiType": "jsonLd",
-        "api": "https://www.losahcenter.org/communitymentalhealthevents",
-        "jsonLdHubPageRequiresRendering": true,
-        "jsonLdEventLinkMustInclude": "/communitymentalhealthevents/"
+        "options": {
+            "url": "https://www.losahcenter.org/communitymentalhealthevents",
+            "hubPageRequiresRendering": true,
+            "eventLinkMustInclude": "/communitymentalhealthevents/"
+        }
     },
     {
         "name": "EcoShip",
         "eventApiType": "googleCalendar",
-        "api": "djrjdo8lttkr78ksvt3c7gnups@group.calendar.google.com",
         "dedupeRank": 3,
-        "eventPageUrl": "https://ecoship.org/calendar"
+        "options": {
+            "calendarId": "djrjdo8lttkr78ksvt3c7gnups@group.calendar.google.com",
+            "eventPageUrl": "https://ecoship.org/calendar"
+        }
     },
     {
         "name": "Terracotto Plants",
         "eventApiType": "googleCalendar",
-        "api": "hp2ssoso11hv9dheqt6ap8j970@group.calendar.google.com",
         "dedupeRank": 3,
-        "eventPageUrl": "https://www.terracottoplants.com/"
+        "options": {
+            "calendarId": "hp2ssoso11hv9dheqt6ap8j970@group.calendar.google.com",
+            "eventPageUrl": "https://www.terracottoplants.com/"
+        }
     },
     {
         "name": "Beer Temple",
         "eventApiType": "googleCalendar",
-        "api": "info@craftbeertemple.com",
         "dedupeRank": 3,
-        "eventPageUrl": "https://craftbeertemple.com/events-2"
+        "options": {
+            "calendarId": "info@craftbeertemple.com",
+            "eventPageUrl": "https://craftbeertemple.com/events-2"
+        }
     },
     {
         "name": "LiveWire Lounge",
         "eventApiType": "do312",
-        "api": "https://do312.com/venues/livewire-lounge.json"
+        "options": {
+            "url": "https://do312.com/venues/livewire-lounge.json"
+        }
     },
     {
         "name": "The People's Cafe",
         "eventApiType": "webCal",
-        "api": "https://www.meetup.com/coffeehouse-meetup-group/events/ical/",
-        "eventPageUrl": "https://www.meetup.com/coffeehouse-meetup-group/events/"
+        "options": {
+            "url": "https://www.meetup.com/coffeehouse-meetup-group/events/ical/",
+            "eventPageUrl": "https://www.meetup.com/coffeehouse-meetup-group/events/"
+        }
     },
     {
         "name": "Brands Park",
         "eventApiType": "jsonLd",
-        "api": "https://brands-park.org/en/events"
+        "options": {
+            "url": "https://brands-park.org/en/events"
+        }
     },
     {
         "name": "Teddy Bear Lounge",
         "eventApiType": "squareSpace",
-        "api": "https://www.teddybearlounge.com/api/open/GetItemsByMonth?collectionId=69925e8db477a47dd1f291d9",
-        "eventPageUrl": "https://www.teddybearlounge.com/events"
+        "options": {
+            "url": "https://www.teddybearlounge.com/api/open/GetItemsByMonth?collectionId=69925e8db477a47dd1f291d9",
+            "eventPageUrl": "https://www.teddybearlounge.com/events"
+        }
     },
     {
         "name": "Kilbourn Park",
         "eventApiType": "googleCalendar",
-        "api": "kilbourncouncil@gmail.com",
         "dedupeRank": 3,
-        "eventPageUrl": "https://www.kilbourncouncil.org/events"
+        "options": {
+            "calendarId": "kilbourncouncil@gmail.com",
+            "eventPageUrl": "https://www.kilbourncouncil.org/events"
+        }
     },
     {
         "name": "Night City Games",
         "eventApiType": "jsonLd",
-        "api": "https://nightcity.games/events/",
-        "jsonLdEventLinkMustInclude": "/e/"
+        "options": {
+            "url": "https://nightcity.games/events/",
+            "eventLinkMustInclude": "/e/"
+        }
     },
     {
         "name": "Chicago Park District",
         "eventApiType": "chicagoParkDistrict",
-        "api": "Algonquin Park, Atheltic Field Park, Avondale Park, Brands Park, Elston (Daniel) Park, Grape Park,Kilbourn Park, Kosciuszko (Thadeuz) Park, Nelson (Andrew) Park, Park-View Playlot Park, Sacramento Park"
+        "options": {
+            "parks": ["Algonquin Park", "Atheltic Field Park", "Avondale Park", "Brands Park", "Elston (Daniel) Park", "Grape Park", "Kilbourn Park", "Kosciuszko (Thadeuz) Park", "Nelson (Andrew) Park", "Park-View Playlot Park", "Sacramento Park"]
+        }
     },
     {
         "name": "Chicago.com",
         "eventApiType": "chicagoDotCom",
         "dedupeRank": 2,
-        "api": "input/avondaleChicagoDotComEvents.json"
+        "options": {
+            "file": "input/avondaleChicagoDotComEvents.json"
+        }
     },
     {
         "name": "Avondale SBA",
         "eventApiType": "avondaleSba",
         "dedupeRank": 2,
-        "api": "https://avondalesba.org"
+        "options": {
+            "url": "https://avondalesba.org"
+        }
     },
     {
         "name": "Avondale Events Form Submissions",
         "eventApiType": "googleSheet",
         "dedupeRank": 1,
-        "api": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"
+        "options": {
+            "sheetId": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"
+        }
     }
 ]

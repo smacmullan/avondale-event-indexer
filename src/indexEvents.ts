@@ -1,83 +1,25 @@
 import { getEndOfWeek } from './utils/time.ts';
-import { fetchJsonLdEvents } from './utils/eventApis/jsonLd.ts';
-import { fetchGoogleCalendarEvents } from './utils/eventApis/googleCalendar.ts';
-import { fetchPlotEvents } from './utils/eventApis/plot.ts';
-import { fetchEventsCalendarCoEvents } from './utils/eventApis/eventsCalendarCo.ts';
-import { fetchDo312Events } from './utils/eventApis/do312.ts';
-import { fetchWebCalEvents } from './utils/eventApis/webcal.ts';
-import { fetchMicrodataEvents } from './utils/eventApis/microdata.ts';
-import { fetchGoogleSheetEvents } from './utils/eventApis/googleSheet.ts';
 import type { Event, Organization } from './definitions.ts';
-import { fetchWixEvents } from './utils/eventApis/wix.ts';
-import { fetchBookManagerEvents } from './utils/eventApis/bookManager.ts';
-import { fetchCpsEvents } from './utils/eventApis/chicagoPublicSchools.ts';
-import { fetchOfferingTreeEvents } from './utils/eventApis/offeringTree.ts';
-import { fetchCpdCapsEvents } from './utils/eventApis/cpdCaps.ts';
-import { fetchElfSightEvents } from './utils/eventApis/elfSight.ts';
-import { fetchChicagoBlockPartyEvents } from './utils/eventApis/chicagoBlockParties.ts';
-import { fetchPopMenuEvents } from './utils/eventApis/popMenu.ts';
-import { fetchSquareSpaceEvents } from './utils/eventApis/squareSpace.ts';
-import { fetchChicagoDotComEvents } from './utils/eventApis/chicagoDotCom.ts';
-import { fetchHairpinEvents } from './utils/eventApis/custom/hairpin.ts';
-import { fetchConsignmentLoungeEvents } from './utils/eventApis/custom/consignmentLounge.ts';
-import { fetchAvondaleSbaEvents } from './utils/eventApis/custom/avondaleSba.ts';
-import { fetchChicagoParkDistrictEvents } from './utils/eventApis/chicagoParkDistrict.ts'
+import type { IntegrationRegistry } from './integrationRegistry.ts';
+import { defaultRegistry } from './defaultRegistry.ts';
 
+export type IndexOptions = {
+    /** Defaults to the registry with all built-in integrations. */
+    registry?: IntegrationRegistry;
+    /** How many weeks out to search. Defaults to 2. */
+    weeksOut?: number;
+};
 
-export async function fetchEvents(org: Organization, weeksOut = 2): Promise<Event[]> {
-    const endSearchDate = getEndOfWeek(weeksOut);
-    switch (org.eventApiType) {
-        case 'jsonLd':
-            return await fetchJsonLdEvents(org, endSearchDate);
-        case 'googleCalendar':
-            return await fetchGoogleCalendarEvents(org, endSearchDate);
-        case 'googleSheet':
-            return await fetchGoogleSheetEvents(org, endSearchDate);
-        case 'plot':
-            return await fetchPlotEvents(org, endSearchDate);
-        case 'do312':
-            return await fetchDo312Events(org, endSearchDate);
-        case 'webCal':
-            return await fetchWebCalEvents(org, endSearchDate);
-        case 'microdata':
-            return await fetchMicrodataEvents(org, endSearchDate);
-        case 'wix':
-            return await fetchWixEvents(org, endSearchDate);
-        case 'bookManager':
-            return await fetchBookManagerEvents(org, endSearchDate);
-        case 'eventsCalendarCo':
-            return await fetchEventsCalendarCoEvents(org, endSearchDate);
-        case 'chicagoPublicSchools':
-            return await fetchCpsEvents(org, endSearchDate);
-        case 'offeringTree':
-            return await fetchOfferingTreeEvents(org, endSearchDate);
-        case 'cpdCaps':
-            return await fetchCpdCapsEvents(org, endSearchDate);
-        case 'elfSight':
-            return await fetchElfSightEvents(org, endSearchDate);
-        case 'chicagoBlockParties':
-            return await fetchChicagoBlockPartyEvents(org, endSearchDate);
-        case 'popMenu':
-            return await fetchPopMenuEvents(org, endSearchDate);
-        case 'squareSpace':
-            return await fetchSquareSpaceEvents(org, endSearchDate);
-        case 'chicagoDotCom':
-            return await fetchChicagoDotComEvents(org, endSearchDate);
-        case 'chicagoParkDistrict':
-            return await fetchChicagoParkDistrictEvents(org, endSearchDate);
-
-        // custom, organization-specific wrappers on existing integrations
-        case 'hairpin':
-            return await fetchHairpinEvents(org, endSearchDate);
-        case 'consignmentLounge':
-            return await fetchConsignmentLoungeEvents(org, endSearchDate);
-        case 'avondaleSba':
-            return await fetchAvondaleSbaEvents(org, endSearchDate);
-
-        default:
-            console.log(`No matching API format found for "${org.eventApiType}" at ${org.name}`)
-            return [];
-    }
+/**
+ * Fetch events for a single organization. Kept for scripts/tests that call it directly.
+ * Never throws: failures are logged by the registry and yield [].
+ */
+export async function fetchEvents(
+    org: Organization,
+    weeksOut = 2,
+    registry: IntegrationRegistry = defaultRegistry,
+): Promise<Event[]> {
+    return registry.fetchEvents(org, getEndOfWeek(weeksOut));
 }
 
 class FetchProgressTracker {
@@ -103,15 +45,21 @@ class FetchProgressTracker {
     }
 }
 
-export async function indexEvents(organizations: Organization[]) {
+export async function indexEvents(
+    organizations: Organization[],
+    { registry = defaultRegistry, weeksOut = 2 }: IndexOptions = {},
+): Promise<Event[]> {
 
     // console logging of indexing progress
     console.log("Getting event data...");
     const tracker = new FetchProgressTracker(organizations.length);
 
-    // configure promise w/ progress logging
+    // compute the cutoff once so every organization uses the same end date
+    const endSearchDate = getEndOfWeek(weeksOut);
+
+    // registry.fetchEvents never rejects, so one failing org can't sink the rest
     const eventPromises = organizations.map(org =>
-        fetchEvents(org).then(events => {
+        registry.fetchEvents(org, endSearchDate).then(events => {
             tracker.finish();
             return events;
         })

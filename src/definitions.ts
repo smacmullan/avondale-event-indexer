@@ -7,7 +7,7 @@ export type Event = {
         name: string;
     };
     url?: string;
-};
+}
 
 export type EventSchedule = {
     startDate: string;
@@ -15,12 +15,11 @@ export type EventSchedule = {
     frequency: string;
     byDay: string;
     monthlyOccurence?: string;
-};
+}
 
 export type Organization = {
-    name: string,
-    eventApiType: string,
-    api: string,
+    name: string;
+    eventApiType: string;
     /** Used for picking event to keep from duplicates. Lower value is preffered. If not specified, assume 0 (highest).
      * 
      * Suggested values:
@@ -29,14 +28,25 @@ export type Organization = {
      *  - 2: an event aggregator
      *  - 3: direct source w/o event detail pages (e.g., a Google calendar)
      */
-    dedupeRank?: Number,
-    jsonLdLinkBlockList?: string[];
-    jsonLdEventLinkMustInclude?: string;
-    jsonLdHubPageRequiresRendering?: boolean;
-    jsonLdEventPagesRequireRendering?: boolean;
-    googleCalendarUseLocation?: boolean;
-    eventPageUrl?: string;
+    dedupeRank?: number;
+    /** Integration-specific; validated by the integration's parseOptions */
+    options?: unknown;
 };
+
+export interface IntegrationContext<TOptions> {
+    org: Organization;
+    options: TOptions;
+    /** Integrations must not return events starting after this. */
+    endSearchDate: Date;
+}
+
+export interface EventIntegration<TOptions = unknown> {
+    readonly type: string;
+    /** Validate and normalize raw config. Throw on invalid input. */
+    parseOptions(raw: unknown): TOptions;
+    /** May throw; the registry handles failures. */
+    fetchEvents(ctx: IntegrationContext<TOptions>): Promise<Event[]>;
+}
 
 type ISODate = string; // Expected format: YYYY-MM-DD
 type ISODatetime = string; // Expected format: YYYY-MM-DDTHH:mm:ss.sssZ

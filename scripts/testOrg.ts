@@ -10,7 +10,7 @@ Usage:
   node scripts/testOrg.ts --org "Reed's Local"
 
   # Pass a standalone organization JSON
-  node scripts/testOrg.ts --org '{"name": "Sleeping Village", "eventApiType": "plot", "api": "sleeping-village.com"}'
+  node scripts/testOrg.ts --org '{"name": "Sleeping Village", "eventApiType": "plot", "options": {"host": "sleeping-village.com"}}'
 
   # Optionally override weeks out (default: 8)
   node scripts/testOrg.ts --org "Reed's Local" --weeks 4
