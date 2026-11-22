@@ -1,105 +1,62 @@
-import * as cheerio from 'cheerio';
-import type { Page } from 'puppeteer';
-import { decodeHtmlEntities } from '../../html.ts';
-import type { Organization, Event } from '../../../definitions.ts';
+import { z } from 'zod';
+import type * as cheerio from 'cheerio';
+import type { Event, EventIntegration } from '../../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../../time.ts';
-import PuppeteerQueueManager from '../../puppeteerQueueManager.ts';
-import { standardizeJsonLdEvent } from '../jsonLd.ts';
-
-/** 
-*  The Avondale Small Business Association (ASBA) website hosts a dynamic siteMap.xml file that lists all the event webpages.
-*  Event webpages have JSON LD data embedded in them.
-*  ASBA is using Avondale Events as an event source but will show a link for those events, so each page is checked for an Avondale Events link
-*  and skipped if found to avoid a recursive event indexing situation.
-*/
-
-// Function to scrape JSON-LD data from all event pages
-export async function fetchAvondaleSbaEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-
-    let eventLinks = await extractEventLinksFromSiteMap(org);
-
-    // Concurrently get event data from individual event pages with queue/rate limiting
-    let allEventData = [];
-    // get JSON LD data from static HTML with cheerio
-    allEventData = await Promise.all(
-        eventLinks.map(async (link) => {
-            // Create a new URL by appending the subdirectory to the original URL
-            const fullUrl = new URL(link, org.api).toString();
-            try {
-                return await extractAsbaJsonLdEventsFromHtml(fullUrl, org);
-            } catch (error) {
-                console.error(`[${org.name}] Error processing event page: ${fullUrl}`, error instanceof Error ? error.message : error);
-                return null;
-            }
-        })
-    );
-
-    // Filter out any null values and flatten sub-arrays into single array
-    allEventData = allEventData.filter((eventData: any) => eventData !== null);
-    allEventData = allEventData.flat();
-
-
-    let events = allEventData.map((event: any) => standardizeJsonLdEvent(event, org));
-    events = events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
-    return events;
+import { fetchText, standardizeAll } from '../../integrationHelpers.ts';
+import { extractJsonLdEventsFromHtml, standardizeJsonLdEvent } from '../jsonLd.ts';
+ 
+/**
+ *  The Avondale Small Business Association (ASBA) website hosts a dynamic sitemap.xml file that lists all the event webpages.
+ *  Event webpages have JSON LD data embedded in them.
+ *  ASBA is using Avondale Events as an event source but will show a link for those events, so each page is checked for an Avondale Events link
+ *  and skipped if found to avoid a recursive event indexing situation.
+ */
+ 
+const optionsSchema = z.object({
+    /** Site base URL, e.g. https://avondalesba.org (trailing slash is removed). Its sitemap.xml lists the event pages. */
+    url: z.url().transform(value => value.replace(/\/+$/, '')),
+}).strict();
+ 
+export type AvondaleSbaOptions = z.infer<typeof optionsSchema>;
+ 
+const AVONDALE_EVENTS_LINK_SELECTOR = 'a[href*="events.avondalechicago.org"]';
+ 
+export const avondaleSbaIntegration = {
+    type: 'avondaleSba',
+ 
+    parseOptions: raw => optionsSchema.parse(raw),
+ 
+    async fetchEvents({ org, options, endSearchDate }) {
+        // Failing to load the sitemap throws (whole integration fails).
+        const eventLinks = await extractEventLinksFromSiteMap(options.url);
+ 
+        // From here on, a failure on one event page only skips that page.
+        const pages = await Promise.all(
+            eventLinks.map(link =>
+                extractJsonLdEventsFromHtml(new URL(link, options.url).toString(), org, linksToAvondaleEvents)
+            )
+        );
+        const rawEvents = pages.filter((page): page is any[] => page !== null).flat();
+ 
+        const events = standardizeAll(rawEvents, (event: any) => standardizeJsonLdEvent(event, org), org.name);
+ 
+        // Pages can't be filtered by date up front, so filter here.
+        return events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    },
+} satisfies EventIntegration<AvondaleSbaOptions>;
+ 
+/** Pages that link to the Avondale Events site are skipped to avoid indexing events twice. */
+function linksToAvondaleEvents(page: cheerio.CheerioAPI): boolean {
+    return page(AVONDALE_EVENTS_LINK_SELECTOR).length > 0;
 }
-
-
-// almost identical to extractJsonLdEventsFromHtml(), except it ignores pages where avondale events site is linked
-async function extractAsbaJsonLdEventsFromHtml(url: string, org?: Organization) {
-    try {
-        const response = await fetch(url);
-        const data = await response.text();
-        const $ = cheerio.load(data);
-
-        // Skip pages that link to events.avondalechicago.org
-        if ($('a[href*="events.avondalechicago.org"]').length > 0) {
-            return null;
-        }
-
-        let jsonLdData: any[] = [];
-        $('script[type="application/ld+json"]').each((i, element) => {
-            const jsonLd = $(element).html();
-            if (jsonLd) {
-                try {
-                    let jsonLdJSON = JSON.parse(jsonLd);
-                    if (jsonLdJSON && !jsonLdJSON.url)
-                        jsonLdJSON.url = url;
-
-                    jsonLdData.push(jsonLdJSON);
-                } catch (error) {
-                    console.error('Error parsing JSON-LD:', error);
-                }
-            }
-        });
-
-        jsonLdData = jsonLdData.flat();
-        const events = jsonLdData.filter(item => item['@type'] && item['@type'].includes("Event"));
-        return events;
-    } catch (error) {
-        const orgName = org?.name || 'Unknown Organization';
-        console.error(`Error fetching a page for ${orgName} (${url}):`, error instanceof Error ? error.message : error);
-        return null;
-    }
+ 
+async function extractEventLinksFromSiteMap(baseUrl: string): Promise<string[]> {
+    const xml = await fetchText(`${baseUrl}/sitemap.xml`);
+ 
+    // using regex to parse URLs from XML
+    const urls = [...xml.matchAll(/<loc>\s*(.*?)\s*<\/loc>/gs)].map(m => m[1]);
+ 
+    // filter out links not under "/events/" subdirectory
+    return urls.filter(url => url.startsWith(baseUrl + "/events/"));
 }
-
-
-async function extractEventLinksFromSiteMap(org: Organization): Promise<string[]> {
-    let baseUrl = org.api;
-    const siteMapUrl = baseUrl + "/sitemap.xml";
-    try {
-        // Get and load the html
-        const response = await fetch(siteMapUrl);
-        const xml = await response.text();
-
-        // using regex to parse URLs from XML
-        const urls = [...xml.matchAll(/<loc>\s*(.*?)\s*<\/loc>/gs)].map(m => m[1]);
-
-        // filter out links not under "/events/" subdirectory
-        let eventLinks = urls.filter(url => url.startsWith(baseUrl + "/events/"));
-        return eventLinks;
-    } catch (error) {
-        console.error(`Error fetching site map "${siteMapUrl}":`, error);
-        return [];
-    }
-}
+ 

@@ -1,24 +1,33 @@
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration } from '../../definitions.ts';
+import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchChicagoBlockPartyEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        // fetch event data
-        let apiString = generateApiUrl(org, endSearchDate);
-        let response = await fetch(apiString);
-        let data = await response.json()
+const optionsSchema = z.object({
+    /** Chicago community area id on the City of Chicago data portal. Digits only: it goes into a query. */
+    neighborhoodId: z.string().regex(/^\d+$/, 'must be a numeric community area id'),
+}).strict();
 
-        let events: Event[] = data.map(standardizeBlockPartyEvent);
-        return events;
-    } catch (error) {
-        console.error(`Error fetching events for ${org.name}.`, error);
-        return [];
-    }
-}
+export type ChicagoBlockPartiesOptions = z.infer<typeof optionsSchema>;
+
+export const chicagoBlockPartiesIntegration = {
+    type: 'chicagoBlockParties',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        // The query filters by date range, so no post-filtering is needed.
+        const data = await fetchJson<any[]>(generateApiUrl(options, endSearchDate));
+        if (!Array.isArray(data))
+            throw new Error('Unexpected response from data portal (expected an array)');
+
+        return standardizeAll(data, standardizeBlockPartyEvent, org.name);
+    },
+} satisfies EventIntegration<ChicagoBlockPartiesOptions>;
 
 /** Generate API URL to get block party data from City of Chicago's Open Data Portal's Transportation Department Permits. */
-function generateApiUrl(org: Organization, endSearchDate: Date): string {
+function generateApiUrl(options: ChicagoBlockPartiesOptions, endSearchDate: Date): string {
 
-    const neighborhoodCode = org.api; // chicago community area id on data portal
+    const neighborhoodCode = options.neighborhoodId;
     const today = new Date();
 
     return `https://data.cityofchicago.org/resource/pubx-yq2d.json?$query=SELECT
@@ -52,7 +61,6 @@ function generateApiUrl(org: Organization, endSearchDate: Date): string {
 }
 
 function standardizeBlockPartyEvent(event: any): Event {
-
     return {
         name: "Block Party",
         startDate: event.applicationstartdate.split("T")[0], // date only
@@ -63,8 +71,7 @@ function standardizeBlockPartyEvent(event: any): Event {
 }
 
 
-
-// Helper functions 
+// Helper functions
 
 function toLocalDate(date: Date): string {
     const pad = (n: any) => String(n).padStart(2, '0');

@@ -157,7 +157,7 @@
         "name": "Skunk Cabbage Books",
         "eventApiType": "bookManager",
         "options": {
-            "storeId": "9932593"
+            "webstoreName": "9932593"
         }
     },
     {
@@ -214,7 +214,13 @@
         "dedupeRank": 3,
         "options": {
             "eventPageUrl": "https://www.chicagopolice.org/community-engagement-calendar/",
-            "beatIds": [1411, 1412, 1732, 1733, 2523]
+            "beatIds": [
+                1411,
+                1412,
+                1732,
+                1733,
+                2523
+            ]
         }
     },
     {
@@ -277,7 +283,8 @@
         "name": "Chief O'Neill's",
         "eventApiType": "popMenu",
         "options": {
-            "url": "https://www.chiefoneillspub.com"
+            "url": "https://www.chiefoneillspub.com",
+            "sectionId": 3327818
         }
     },
     {
@@ -367,7 +374,19 @@
         "name": "Chicago Park District",
         "eventApiType": "chicagoParkDistrict",
         "options": {
-            "parks": ["Algonquin Park", "Atheltic Field Park", "Avondale Park", "Brands Park", "Elston (Daniel) Park", "Grape Park", "Kilbourn Park", "Kosciuszko (Thadeuz) Park", "Nelson (Andrew) Park", "Park-View Playlot Park", "Sacramento Park"]
+            "parks": [
+                "Algonquin Park",
+                "Athletic Field Park",
+                "Avondale Park",
+                "Brands Park",
+                "Elston (Daniel) Park",
+                "Grape Park",
+                "Kilbourn Park",
+                "Kosciuszko (Thadeuz) Park",
+                "Nelson (Andrew) Park",
+                "Park-View Playlot Park",
+                "Sacramento Park"
+            ]
         }
     },
     {

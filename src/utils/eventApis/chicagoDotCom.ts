@@ -1,26 +1,38 @@
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
 import { readFile } from 'fs/promises';
+import type { Event, EventIntegration } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import { standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchChicagoDotComEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        // Chicago.com does not have a public events API yet, so copying website response data to file
-        // load JSON data from file
-        const fileContents = await readFile(org.api, 'utf8');
+const optionsSchema = z.object({
+    /** Path to a JSON file copied from the Chicago.com site (resolved from the working directory) */
+    file: z.string().min(1),
+}).strict();
+
+export type ChicagoDotComOptions = z.infer<typeof optionsSchema>;
+
+export const chicagoDotComIntegration = {
+    type: 'chicagoDotCom',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        // Chicago.com does not have a public events API yet, so response data is copied to a file.
+        // A missing or malformed file throws (whole integration fails).
+        const fileContents = await readFile(options.file, 'utf8');
         const data = JSON.parse(fileContents);
+        if (!Array.isArray(data?.events))
+            throw new Error(`"${options.file}" has no "events" array`);
 
-        let events: Event[] = data.events.map(standardizeChicagoDotComEvent);
-        events = events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
-        return events;
-    } catch (error) {
-        console.error(`Error fetching events for ${org.name}.`, error);
-        return [];
-    }
-}
+        const events = standardizeAll(data.events, standardizeChicagoDotComEvent, org.name);
+
+        // A file has no date filter, so filter here.
+        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    },
+} satisfies EventIntegration<ChicagoDotComOptions>;
 
 
 function standardizeChicagoDotComEvent(event: any): Event {
-
     return {
         name: event.record.name,
         startDate: event.record.startsAt,

@@ -1,17 +1,16 @@
-import type { Organization, Event } from '../../../definitions.ts';
-import { fetchGoogleCalendarEvents } from '../googleCalendar.ts';
+import type { Event } from '../../../definitions.ts';
+import { googleCalendarIntegration } from '../googleCalendar.ts';
+import { withTransform } from '../../integrationHelpers.ts';
 
 /**
  * Wrapper on the Google Calendar integration for Consignment Lounge. Attempts to parse event times from title
- * and update event startDate and endDate values.
- * @param org 
- * @param endSearchDate 
+ * and update event startDate and endDate values. Accepts the same options as the googleCalendar integration.
  */
-export async function fetchConsignmentLoungeEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    let events = await fetchGoogleCalendarEvents(org, endSearchDate);
-    events = events.map(cleanupEventTime);
-    return events;
-}
+export const consignmentLoungeIntegration = withTransform(
+    googleCalendarIntegration,
+    'consignmentLounge',
+    events => events.map(cleanupEventTime),
+);
 
 
 type ParsedTimeInfo = {

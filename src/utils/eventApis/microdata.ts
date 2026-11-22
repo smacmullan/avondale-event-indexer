@@ -1,24 +1,44 @@
 import * as cheerio from 'cheerio';
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import { fetchText } from '../integrationHelpers.ts';
 
-export async function fetchMicrodataEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        const response = await fetch(org.api);
-        const data = await response.text();
-        const $ = cheerio.load(data);
+const optionsSchema = z.object({
+    /** Events listing page containing schema.org microdata */
+    url: z.url(),
+}).strict();
 
-        // Extract event microdata
+export type MicrodataOptions = z.infer<typeof optionsSchema>;
+
+export const microdataIntegration = {
+    type: 'microdata',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        const html = await fetchText(options.url);
+        const $ = cheerio.load(html);
+
+        // Extract event microdata. Elements missing a name or date are skipped.
         const events: Event[] = [];
         $('article.event-list-object').each((i, element) => {
             const eventName = $(element).find('.event-object-title a[itemprop="name"] span').text().trim();
             const eventDate = $(element).find('meta[itemprop="startDate"]').attr('content');
+            if (!eventName || !eventDate)
+                return;
+
             const eventLocation = $(element).find('a[itemprop="name"]').last().text().trim();
-            
+
             const eventLink = $(element).find('.event-object-title a[itemprop="name"]').attr('href');
-            let fullEventLink;
-            if(eventLink)
-                fullEventLink = new URL(eventLink, new URL(org.api)).href;
+            let fullEventLink: string | undefined;
+            if (eventLink) {
+                try {
+                    fullEventLink = new URL(eventLink, options.url).href;
+                } catch {
+                    fullEventLink = undefined; // malformed link: keep the event without a url
+                }
+            }
 
             events.push({
                 name: eventName,
@@ -28,12 +48,9 @@ export async function fetchMicrodataEvents(org: Organization, endSearchDate: Dat
                 },
                 url: fullEventLink,
             });
-        }); 
+        });
 
-        let filteredEvents = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
-        return filteredEvents;
-    } catch (error) {
-        console.error(`Error fetching events for ${org.name}.`, error);
-        return [];
-    }
-}
+        // The page can't filter by date, so filter here.
+        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    },
+} satisfies EventIntegration<MicrodataOptions>;

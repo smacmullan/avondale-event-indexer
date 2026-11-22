@@ -1,25 +1,43 @@
 import ical from 'ical';
+import { z } from 'zod';
 import { decodeHtmlEntities } from '../html.ts';
-import type { Organization, Event } from '../../definitions.ts';
+import type { Event, EventIntegration, Organization } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import { fetchText, standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchWebCalEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        const response = await fetch(org.api);
-        const data = await response.text();
-        let calendarData = ical.parseICS(data);
-        let webCalEvents = Object.values(calendarData);
+const optionsSchema = z.object({
+    /** iCal feed URL (https://..., not webcal://) */
+    url: z.url(),
+    /** Link to the organization's public events page, used as each event's url */
+    eventPageUrl: z.url().optional(),
+}).strict();
 
-        let events = webCalEvents.map(event => standardizeWebCalEvent(event, org));
-        events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
-        return events;
-    } catch (error) {
-        console.error(`Error fetching calendar events for ${org.name}.`, error);
-        return [];
-    }
-}
+export type WebCalOptions = z.infer<typeof optionsSchema>;
 
-function standardizeWebCalEvent(event: any, org: Organization): Event {
+export const webCalIntegration = {
+    type: 'webCal',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        const data = await fetchText(options.url);
+        const calendarData = ical.parseICS(data);
+
+        // Feeds also contain non-event components (timezones, etc.), so keep only VEVENTs
+        const webCalEvents = Object.values(calendarData).filter((component: any) => component.type === 'VEVENT');
+
+        const events = standardizeAll(
+            webCalEvents,
+            (event: any) => standardizeWebCalEvent(event, org, options),
+            org.name,
+        );
+
+        // iCal feeds can't be filtered by date, so filter here.
+        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    },
+} satisfies EventIntegration<WebCalOptions>;
+
+function standardizeWebCalEvent(event: any, org: Organization, options: WebCalOptions): Event {
     const organizerName = typeof event.organizer === 'string'
         ? undefined
         : event.organizer?.val;
@@ -31,6 +49,6 @@ function standardizeWebCalEvent(event: any, org: Organization): Event {
         organizer: {
             name: organizerName ? decodeHtmlEntities(organizerName) : org.name,
         },
-        url: org.eventPageUrl,
+        url: options.eventPageUrl,
     };
 }

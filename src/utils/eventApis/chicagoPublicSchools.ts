@@ -1,24 +1,40 @@
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration } from '../../definitions.ts';
+import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchCpsEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
+const optionsSchema = z.object({
+    /** Substring matched against each event's location title, e.g. "Logandale" */
+    schoolName: z.string().min(1),
+}).strict();
+
+export type ChicagoPublicSchoolsOptions = z.infer<typeof optionsSchema>;
+
+// Already URL-encoded list of CPS calendar category ids
+const CATEGORIES = "1149%2C1151%2C1097%2C1135%2C1150%2C1148%2C1106%2C1165%2C1142%2C1118";
+
+export const chicagoPublicSchoolsIntegration = {
+    type: 'chicagoPublicSchools',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        // The API filters by date range, so no post-filtering is needed.
         // put dates into YYYY-MM-DD format
         const today = new Date().toISOString().split('T')[0];
         const endDate = endSearchDate.toISOString().split('T')[0];
-        const categories = "1149%2C1151%2C1097%2C1135%2C1150%2C1148%2C1106%2C1165%2C1142%2C1118";
 
-        let apiString = `https://www.cps.edu/api/calendar/getevents?categories=${categories}&tags=&start=${today}&end=${endDate}`;
-        let response = await fetch(apiString);
-        let cpsEvents = await response.json()
-        cpsEvents = cpsEvents.filter((event: any) => event.extendedProps.eventLocationTitle.includes(org.api))
-        return cpsEvents.map(standardizeCpsEvent);
-    } catch (error) {
-        console.error(`Error fetching calendar events for ${org.name}.`, error);
-        return [];
-    }
-}
+        const apiString = `https://www.cps.edu/api/calendar/getevents?categories=${CATEGORIES}&tags=&start=${today}&end=${endDate}`;
+        const cpsEvents = await fetchJson<any[]>(apiString);
+        if (!Array.isArray(cpsEvents))
+            throw new Error('Unexpected response from CPS calendar (expected an array)');
 
-function standardizeCpsEvent(event: any, org: Organization): Event {
+        const atSchool = cpsEvents.filter(event =>
+            event.extendedProps?.eventLocationTitle?.includes(options.schoolName));
+        return standardizeAll(atSchool, standardizeCpsEvent, org.name);
+    },
+} satisfies EventIntegration<ChicagoPublicSchoolsOptions>;
+
+function standardizeCpsEvent(event: any): Event {
     return {
         name: event.title,
         startDate: event.start,

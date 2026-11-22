@@ -1,25 +1,35 @@
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration } from '../../definitions.ts';
+import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchChicagoParkDistrictEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        // fetch event data
-        let apiString = generateApiUrl(org, endSearchDate);
-        let response = await fetch(apiString);
-        let data = await response.json()
+const optionsSchema = z.object({
+    /** Park names exactly as they appear in the data portal's `location_facility` column */
+    parks: z.array(
+        z.string().trim().min(1).refine(name => !name.includes('"'), 'must not contain double quotes (names go into a query)')
+    ).min(1),
+}).strict();
 
-        let events: Event[] = data.map(standardizeParkDistrictEvent);
-        return events;
-    } catch (error) {
-        console.error(`Error fetching events for ${org.name}.`, error);
-        return [];
-    }
-}
+export type ChicagoParkDistrictOptions = z.infer<typeof optionsSchema>;
 
-/** Generate API URL to get park district event data from City of Chicago's Open Data Portal*/
-function generateApiUrl(org: Organization, endSearchDate: Date): string {
+export const chicagoParkDistrictIntegration = {
+    type: 'chicagoParkDistrict',
 
-    const parkNames = org.api.split(",");
-    const parkNamesQueryString = parkNames.map(s => `"${s.trim()}"`).join(", "); // format `"Park #1", "Park #2"`
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        // The query filters by date range, so no post-filtering is needed.
+        const data = await fetchJson<any[]>(generateApiUrl(options, endSearchDate));
+        if (!Array.isArray(data))
+            throw new Error('Unexpected response from data portal (expected an array)');
+
+        return standardizeAll(data, standardizeParkDistrictEvent, org.name);
+    },
+} satisfies EventIntegration<ChicagoParkDistrictOptions>;
+
+/** Generate API URL to get park district event data from City of Chicago's Open Data Portal */
+function generateApiUrl(options: ChicagoParkDistrictOptions, endSearchDate: Date): string {
+
+    const parkNamesQueryString = options.parks.map(name => `"${name}"`).join(", "); // format `"Park #1", "Park #2"`
     const today = new Date();
 
     return `https://data.cityofchicago.org/resource/tn7v-6rnw.json?$query=SELECT
@@ -60,7 +70,6 @@ function generateApiUrl(org: Organization, endSearchDate: Date): string {
 }
 
 function standardizeParkDistrictEvent(event: any): Event {
-
     return {
         name: event.title,
         startDate: event.start_date,
@@ -73,8 +82,7 @@ function standardizeParkDistrictEvent(event: any): Event {
 }
 
 
-
-// Helper functions 
+// Helper functions
 
 function toLocalDate(date: Date): string {
     const pad = (n: any) => String(n).padStart(2, '0');

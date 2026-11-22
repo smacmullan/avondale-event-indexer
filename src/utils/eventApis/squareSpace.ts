@@ -1,33 +1,47 @@
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration, Organization } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchSquareSpaceEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        // fetch event data
-        // SquareSpace API groups events by month, require multiple calls depending on time range
-        const monthStrings = generateMonthStrings(endSearchDate);
-        let squareSpaceEvents: any[] = [];
-        for (const monthString of monthStrings) {
-            let url = `${org.api}&month=${monthString}`;
-            let response = await fetch(url);
-            let monthEvents = await response.json()
+const optionsSchema = z.object({
+    /** Squarespace GetItemsByMonth API URL. Must already contain a query string; `month` is appended. */
+    url: z.url().refine(value => value.includes('?'), 'must already contain a query string'),
+    /** Link to the organization's public events page, used as each event's url */
+    eventPageUrl: z.url().optional(),
+}).strict();
+
+export type SquareSpaceOptions = z.infer<typeof optionsSchema>;
+
+export const squareSpaceIntegration = {
+    type: 'squareSpace',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        // Squarespace groups events by month, so the time range may need multiple calls.
+        // Calls are sequential to stay polite to the site.
+        const squareSpaceEvents: any[] = [];
+        for (const monthString of generateMonthStrings(endSearchDate)) {
+            const monthEvents = await fetchJson(`${options.url}&month=${monthString}`);
+            if (!Array.isArray(monthEvents))
+                throw new Error(`Unexpected response for month ${monthString} (expected an array)`);
             squareSpaceEvents.push(...monthEvents);
         }
 
-        // standardize events and filter by start time
-        let events: Event[] = squareSpaceEvents.map((event: any) => standardizeSquareSpaceEvents(event, org));
-        events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
+        const events = standardizeAll(
+            squareSpaceEvents,
+            (event: any) => standardizeSquareSpaceEvents(event, org, options),
+            org.name,
+        );
 
-        return events;
-    } catch (error) {
-        console.error(`Error fetching events for ${org.name}.`, error);
-        return [];
-    }
-}
+        // Months are coarser than our date range, so filter here.
+        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    },
+} satisfies EventIntegration<SquareSpaceOptions>;
 
-/** 
-* Build an array of month strings (MM-YYYY) between today and endSearchDate. 
-*/
+/**
+ * Build an array of month strings (MM-YYYY) between today and endSearchDate.
+ */
 function generateMonthStrings(endSearchDate: Date): string[] {
     const today = new Date();
 
@@ -45,7 +59,7 @@ function generateMonthStrings(endSearchDate: Date): string[] {
     return monthStrings;
 }
 
-function standardizeSquareSpaceEvents(event: any, org: Organization): Event {
+function standardizeSquareSpaceEvents(event: any, org: Organization, options: SquareSpaceOptions): Event {
     return {
         name: event.title,
         startDate: new Date(event.startDate).toISOString(),
@@ -53,6 +67,6 @@ function standardizeSquareSpaceEvents(event: any, org: Organization): Event {
         organizer: {
             name: org.name,
         },
-        url: org.eventPageUrl || undefined,
+        url: options.eventPageUrl || undefined,
     };
 }

@@ -1,68 +1,75 @@
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration } from '../../definitions.ts';
 import PuppeteerQueueManager from '../puppeteerQueueManager.ts';
+import { standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchCpdCapsEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
+const DEFAULT_CALENDAR_URL = 'https://www.chicagopolice.org/community-engagement-calendar/';
+
+const optionsSchema = z.object({
+    /** Police beat ids to include, e.g. [1411, 1412] */
+    beatIds: z.array(z.number().int().positive()).min(1),
+    /** Public calendar page. Loaded first to get browser cookies, and used as each event's url. */
+    eventPageUrl: z.url().default(DEFAULT_CALENDAR_URL),
+}).strict();
+
+export type CpdCapsOptions = z.infer<typeof optionsSchema>;
+
+export const cpdCapsIntegration = {
+    type: 'cpdCaps',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        // The API filters by date range, so no post-filtering is needed.
         // put dates into Unix timestamp format in seconds
-        const today = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000); // today at 00:00 
+        const today = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000); // today at 00:00
         const endDate = Math.floor(endSearchDate.getTime() / 1000);
 
-        let apiString = `https://www.chicagopolice.org/api/calendarEvents?start=${today}&end=${endDate}&view=day`;
-        let events = await getEventsFromApi(apiString, org);
+        const apiString = `https://www.chicagopolice.org/api/calendarEvents?start=${today}&end=${endDate}&view=day`;
+        const events = await getEventsFromApi(apiString, options.eventPageUrl);
+        if (!Array.isArray(events))
+            throw new Error('Unexpected response from CPD calendar (expected an array)');
 
-        // filter the data
-        const policeBeats = org.api.split(',');
-        events = events.filter((event: any) => isEventInBeats(event, policeBeats));
-        events = events.filter(isCapsEvent);
+        // attendees are strings in the API, so compare as strings
+        const policeBeats = new Set(options.beatIds.map(String));
+        const relevantEvents = events
+            .filter((event: any) => isEventInBeats(event, policeBeats))
+            .filter(isCapsEvent);
 
-        return events.map(standardizeCpdCapsEvent);
-    } catch (error) {
-        console.error(`Error fetching calendar events for ${org.name}:`, error);
-        return [];
-    }
-}
+        return standardizeAll(relevantEvents, event => standardizeCpdCapsEvent(event, options.eventPageUrl), org.name);
+    },
+} satisfies EventIntegration<CpdCapsOptions>;
 
-async function getEventsFromApi(site: string, org: Organization) {
+async function getEventsFromApi(apiUrl: string, cookiePageUrl: string): Promise<any> {
     const queueManager = PuppeteerQueueManager.getInstance();
 
-    try {
-        return await queueManager.queuePageOperation(async (page) => {
-            try {
-                // navigate to the homepage to get proper browser cookies
-                await page.goto("https://www.chicagopolice.org/community-engagement-calendar/", { waitUntil: 'networkidle2' });
+    // Errors propagate to the registry, which logs them once.
+    return await queueManager.queuePageOperation(async (page) => {
+        // navigate to the calendar page first to get proper browser cookies
+        await page.goto(cookiePageUrl, { waitUntil: 'networkidle2' });
 
-                // fetch the data from API
-                const data = await page.evaluate(
-                    async (site: string): Promise<any> => {
-                        const res = await fetch(site, {
-                            method: 'GET',
-                        });
-                        return res.json();
-                    }, site);
-
-                return data;
-            } catch (error) {
-                console.error(`Error fetching CPD CAPS events for ${org.name}:`, error);
-                throw error;
-            }
-        });
-    } catch (error) {
-        console.error(`Failed to retrieve CPD CAPS data for ${org.name} (${site}):`, error);
-        throw error;
-    }
+        // fetch the data from the API inside the page so the cookies apply
+        return await page.evaluate(
+            async (url: string): Promise<any> => {
+                const res = await fetch(url, { method: 'GET' });
+                if (!res.ok)
+                    throw new Error(`HTTP ${res.status} from CPD calendar API`);
+                return res.json();
+            }, apiUrl);
+    });
 }
 
-function isEventInBeats(event: any, beats: string[]): boolean {
-    return event.attendees.some((attendee: string) => beats.includes(attendee));
+function isEventInBeats(event: any, beats: Set<string>): boolean {
+    return (event.attendees ?? []).some((attendee: string) => beats.has(attendee));
 }
 
 function isCapsEvent(event: any): boolean {
-    return event.title.toUpperCase().includes("BEAT")
-        || event.attendees.some((attendee: string) => attendee.toUpperCase().includes("CAPS"))
-        || event.body.toUpperCase().includes("CAPS");
+    return (event.title ?? '').toUpperCase().includes("BEAT")
+        || (event.attendees ?? []).some((attendee: string) => attendee.toUpperCase().includes("CAPS"))
+        || (event.body ?? '').toUpperCase().includes("CAPS");
 }
 
-function standardizeCpdCapsEvent(event: any): Event {
+function standardizeCpdCapsEvent(event: any, eventPageUrl: string): Event {
     return {
         name: event.title,
         startDate: event.start,
@@ -70,6 +77,6 @@ function standardizeCpdCapsEvent(event: any): Event {
         organizer: {
             name: event.location,
         },
-        url: "https://www.chicagopolice.org/community-engagement-calendar/",
+        url: eventPageUrl,
     };
 }

@@ -5,6 +5,7 @@ import { decodeHtmlEntities } from '../html.ts';
 import type { Organization, Event, EventIntegration } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
 import PuppeteerQueueManager from '../puppeteerQueueManager.ts';
+import { fetchText, standardizeAll } from '../integrationHelpers.ts';
 
 const optionsSchema = z.object({
     /** The event "hub" page that links to individual event pages */
@@ -64,19 +65,27 @@ export const jsonLdIntegration = {
         const rawEvents = allEventData.filter(eventData => eventData !== null).flat();
 
         // This source can't pre-filter by date, so filter here.
-        let events = rawEvents.map((event: any) => standardizeJsonLdEvent(event, org));
-        events = events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
-        return deduplicateEvents(events);
+        const events = standardizeAll(rawEvents, (event: any) => standardizeJsonLdEvent(event, org), org.name);
+        return deduplicateEvents(
+            events.filter((event: Event) => isEventUpcomingAndBeforeDate(event, endSearchDate))
+        );
     },
 } satisfies EventIntegration<JsonLdOptions>;
 
 
-/** Returns null (and logs) if the page can't be fetched, so one bad page doesn't sink the rest. */
-async function extractJsonLdEventsFromHtml(url: string, org: Organization): Promise<any[] | null> {
+/**
+ * Returns null (and logs) if the page can't be fetched, so one bad page doesn't sink the rest.
+ * `shouldSkipPage` lets wrapper integrations ignore certain pages
+ */
+export async function extractJsonLdEventsFromHtml(
+    url: string,
+    org: Organization,
+    shouldSkipPage?: (page: cheerio.CheerioAPI) => boolean,
+): Promise<any[] | null> {
     try {
-        const response = await fetch(url);
-        const data = await response.text();
-        const $ = cheerio.load(data);
+        const $ = cheerio.load(await fetchText(url));
+        if (shouldSkipPage?.($))
+            return [];
 
         let jsonLdData: any[] = [];
         $('script[type="application/ld+json"]').each((i, element) => {
@@ -134,11 +143,8 @@ async function extractJsonLdEventsFromRenderedPage(page: Page, url: string, org:
 }
 
 async function extractEventLinksFromHtml(options: JsonLdOptions): Promise<string[]> {
-    const response = await fetch(options.url);
-    if (!response.ok)
-        throw new Error(`Hub page "${options.url}" returned HTTP ${response.status}`);
-
-    const $ = cheerio.load(await response.text());
+    // Throws on a non-2xx response (whole integration fails)
+    const $ = cheerio.load(await fetchText(options.url));
 
     // Get all event links on the page
     const links: string[] = [];

@@ -1,24 +1,34 @@
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchDo312Events(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        // fetch event data
-        let response = await fetch(org.api);
-        let data = await response.json()
-        let do312Events = data.event_groups.flatMap((group: any) => group.events);
+const optionsSchema = z.object({
+    /** Venue JSON feed, e.g. https://do312.com/venues/late-bar.json */
+    url: z.url(),
+}).strict();
 
-        let events: Event[] = do312Events.map(standardizeDo312Event);
-        events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
-        return events;
-    } catch (error) {
-        console.error(`Error fetching events for ${org.name}.`, error);
-        return [];
-    }
-}
+export type Do312Options = z.infer<typeof optionsSchema>;
+
+export const do312Integration = {
+    type: 'do312',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        const data = await fetchJson(options.url);
+        if (!Array.isArray(data?.event_groups))
+            throw new Error('Unexpected Do312 response (no "event_groups" array)');
+
+        const do312Events = data.event_groups.flatMap((group: any) => group.events ?? []);
+        const events = standardizeAll(do312Events, standardizeDo312Event, org.name);
+
+        // The feed can't filter by date, so filter here.
+        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    },
+} satisfies EventIntegration<Do312Options>;
 
 function standardizeDo312Event(event: any): Event {
-
     return {
         name: event.title,
         startDate: event.begin_time || event.begin_date,
@@ -26,6 +36,6 @@ function standardizeDo312Event(event: any): Event {
         organizer: {
             name: event.venue.title,
         },
-        url: event.permalink ? `https://do312.com${event.permalink}`: undefined,
+        url: event.permalink ? `https://do312.com${event.permalink}` : undefined,
     };
 }

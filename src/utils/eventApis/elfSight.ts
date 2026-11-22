@@ -1,31 +1,50 @@
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration, Organization } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../time.ts';
+import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchElfSightEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        // fetch event data
-        let response = await fetch(org.api);
-        let data = await response.json()
-        let elfSightEvents = extractEventArray(data, org.api);
+const optionsSchema = z.object({
+    /** ElfSight widget data URL. Must include the widget id as the `w` query parameter. */
+    url: z.url(),
+    /** Link to the organization's public events page, used as each event's url */
+    eventPageUrl: z.url().optional(),
+}).strict().refine(
+    options => new URL(options.url).searchParams.has('w'),
+    { message: 'url must include a "w" (widget id) query parameter', path: ['url'] },
+);
 
-        let events: Event[] = elfSightEvents.map((event: any) => standardizeElfSightEvent(event, org));
-        events = events.filter((event) => isEventUpcomingAndBeforeDate(event, endSearchDate));
-        return events;
-    } catch (error) {
-        console.error(`Error fetching events for ${org.name}.`, error);
-        return [];
-    }
+export type ElfSightOptions = z.infer<typeof optionsSchema>;
+
+export const elfSightIntegration = {
+    type: 'elfSight',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        const data = await fetchJson(options.url);
+        const elfSightEvents = extractEventArray(data, options.url);
+
+        const events = standardizeAll(
+            elfSightEvents,
+            (event: any) => standardizeElfSightEvent(event, org, options),
+            org.name,
+        );
+
+        // The widget data can't filter by date, so filter here.
+        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    },
+} satisfies EventIntegration<ElfSightOptions>;
+
+function extractEventArray(json: any, url: string): any[] {
+    const widgetKey = new URL(url).searchParams.get('w') || '';
+    const widget = json?.data?.widgets?.[widgetKey];
+    if (!widget)
+        throw new Error(`Widget "${widgetKey}" not found in ElfSight response`);
+    return widget.data?.settings?.events || [];
 }
 
-function extractEventArray(json: any, api: string) {
-    let widgetKey = new URL(api).searchParams.get('w') || '';
-    return json?.data?.widgets?.[widgetKey]?.data?.settings?.events || [];
-}
-
-
-function standardizeElfSightEvent(event: any, org: Organization): Event {
-
-    let startDate = new Date(`${event.start.date}T${event.start.time}:00`).toISOString();
+function standardizeElfSightEvent(event: any, org: Organization, options: ElfSightOptions): Event {
+    const startDate = new Date(`${event.start.date}T${event.start.time}:00`).toISOString();
 
     return {
         name: event.name,
@@ -33,6 +52,6 @@ function standardizeElfSightEvent(event: any, org: Organization): Event {
         organizer: {
             name: org.name,
         },
-        url: org.eventPageUrl || undefined,
+        url: options.eventPageUrl || undefined,
     };
 }

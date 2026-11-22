@@ -1,20 +1,37 @@
-import type { Organization, Event } from '../../definitions.ts';
+import { z } from 'zod';
+import type { Event, EventIntegration } from '../../definitions.ts';
+import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
 
-export async function fetchEventsCalendarCoEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    try {
-        // put dates into Unix timestamp format
-        const today = new Date().setHours(0, 0, 0, 0); // today at 00:00 
+const optionsSchema = z.object({
+    /** Host, path, and query of the widget API, WITHOUT "https://" (it is added for you).
+     *  Must already contain a query string; from/to are appended. */
+    endpoint: z.string().min(1).refine(
+        value => !/^https?:\/\//i.test(value),
+        'omit the "https://" prefix',
+    ),
+}).strict();
+
+export type EventsCalendarCoOptions = z.infer<typeof optionsSchema>;
+
+export const eventsCalendarCoIntegration = {
+    type: 'eventsCalendarCo',
+
+    parseOptions: raw => optionsSchema.parse(raw),
+
+    async fetchEvents({ org, options, endSearchDate }) {
+        // The API filters by date range, so no post-filtering is needed.
+        // put dates into Unix timestamp format (milliseconds)
+        const today = new Date().setHours(0, 0, 0, 0); // today at 00:00
         const endDate = endSearchDate.getTime();
 
-        let apiString = `https://${org.api}&from=${today}&to=${endDate}`;
-        let response = await fetch(apiString);
-        let data = await response.json();
-        return data.events.map(standardizeEventsCalendarCoEvent);
-    } catch (error) {
-        console.error(`Error fetching calendar events for ${org.name}.`, error);
-        return [];
-    }
-}
+        const apiString = `https://${options.endpoint}&from=${today}&to=${endDate}`;
+        const data = await fetchJson(apiString);
+        if (!Array.isArray(data?.events))
+            throw new Error('Unexpected response (no "events" array)');
+
+        return standardizeAll(data.events, standardizeEventsCalendarCoEvent, org.name);
+    },
+} satisfies EventIntegration<EventsCalendarCoOptions>;
 
 function standardizeEventsCalendarCoEvent(event: any): Event {
     const { title, start_time, end_time, location, event_link } = event;

@@ -1,17 +1,16 @@
-import type { Organization, Event } from '../../../definitions.ts';
-import { fetchJsonLdEvents } from '../jsonLd.ts';
+import type { Event } from '../../../definitions.ts';
+import { jsonLdIntegration } from '../jsonLd.ts';
+import { withTransform } from '../../integrationHelpers.ts';
 
 /**
  * Wrapper on the JSON LD integration for Hairpin Arts Center. Attempts to replace generic event titles with
- * information parsed from the event URL.
- * @param org 
- * @param endSearchDate 
+ * information parsed from the event URL. Accepts the same options as the jsonLd integration.
  */
-export async function fetchHairpinEvents(org: Organization, endSearchDate: Date): Promise<Event[]> {
-    let events = await fetchJsonLdEvents(org, endSearchDate);
-    events = events.map(cleanupEventName);
-    return events;
-}
+export const hairpinIntegration = withTransform(
+    jsonLdIntegration,
+    'hairpin',
+    events => events.map(cleanupEventName),
+);
 
 
 const BAD_NAME_PREFIX = "Explore Our";
