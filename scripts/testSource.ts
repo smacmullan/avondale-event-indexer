@@ -1,4 +1,4 @@
-import { fetchEvents } from '../src/collect/collectEvents.ts';
+import { collectEventsFromSource } from '../src/collect/collectEvents.ts';
 import sources from '../config/sources.json' with { type: 'json' };
 
 const args = process.argv.slice(2);
@@ -44,7 +44,7 @@ if (sourceArg.trim().startsWith('{')) {
 }
 
 async function main() {
-    const events = await fetchEvents(source, weeksOut);
+    const events = await collectEventsFromSource(source, { weeksOut });
     console.log(JSON.stringify(events, null, 2));
 }
 

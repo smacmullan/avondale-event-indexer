@@ -1,7 +1,7 @@
 [
     {
         "name": "Avondale Gardening Alliance",
-        "eventApiType": "googleCalendar",
+        "integrationType": "googleCalendar",
         "dedupeRank": 3,
         "options": {
             "useLocation": true,
@@ -11,7 +11,7 @@
     },
     {
         "name": "Reed's Local",
-        "eventApiType": "googleCalendar",
+        "integrationType": "googleCalendar",
         "dedupeRank": 3,
         "options": {
             "calendarId": "reedslocaltap@gmail.com",
@@ -20,7 +20,7 @@
     },
     {
         "name": "Consignment Lounge",
-        "eventApiType": "consignmentLounge",
+        "integrationType": "consignmentLounge",
         "options": {
             "calendarId": "9126428df9b2d09369486b0edc22fefda299ed3f2f45b4da777557902c662f3d@group.calendar.google.com",
             "eventPageUrl": "https://www.consignmentlounge.com/calendar"
@@ -28,14 +28,14 @@
     },
     {
         "name": "Sleeping Village",
-        "eventApiType": "plot",
+        "integrationType": "plot",
         "options": {
             "host": "sleeping-village.com"
         }
     },
     {
         "name": "Firefly Fiber Arts Studio",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.fireflyfiberarts.com/new-events-1",
             "hubPageRequiresRendering": true
@@ -43,35 +43,35 @@
     },
     {
         "name": "Prism Games",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.prismgameschicago.com/events"
         }
     },
     {
         "name": "The Brewed",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.thebrewedcoffee.com/events"
         }
     },
     {
         "name": "Bric-a-Brac Records",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.bricabracrecords.com/upcoming-events"
         }
     },
     {
         "name": "Insect Asylum",
-        "eventApiType": "eventsCalendarCo",
+        "integrationType": "eventsCalendarCo",
         "options": {
             "endpoint": "plugin.eventscalendar.co/api/eventbrite/events?user=user_deg5cbAfk1s2z6e6Nqm7J&project=proj_kzcnLsblbDS6HB8f1RPe9&calendar=43421436193"
         }
     },
     {
         "name": "Bud & Rita's",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://budandritas.com/events/",
             "linkBlockList": [
@@ -83,21 +83,21 @@
     },
     {
         "name": "Late Bar",
-        "eventApiType": "do312",
+        "integrationType": "do312",
         "options": {
             "url": "https://do312.com/venues/late-bar.json"
         }
     },
     {
         "name": "Athletic Field Park",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.athleticfieldpark.com/community-events"
         }
     },
     {
         "name": "Unity Park",
-        "eventApiType": "googleCalendar",
+        "integrationType": "googleCalendar",
         "dedupeRank": 3,
         "options": {
             "calendarId": "webmaster@unityparkchicago.org",
@@ -106,28 +106,28 @@
     },
     {
         "name": "Hairpin Arts Center",
-        "eventApiType": "hairpin",
+        "integrationType": "hairpin",
         "options": {
             "url": "https://www.hairpinartscenter.org/calendar"
         }
     },
     {
         "name": "Avondale Music Hall",
-        "eventApiType": "do312",
+        "integrationType": "do312",
         "options": {
             "url": "https://do312.com/venues/avondale-music-hall.json"
         }
     },
     {
         "name": "Elastic Arts",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://elasticarts.org/events"
         }
     },
     {
         "name": "Rockwell on the River",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.eventbrite.com/o/37541482633",
             "eventLinkMustInclude": "/e/",
@@ -136,7 +136,7 @@
     },
     {
         "name": "Guild Row",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.eventbrite.com/o/guild-row-82425627613",
             "eventLinkMustInclude": "/e/",
@@ -145,7 +145,7 @@
     },
     {
         "name": "Judson & Moore Distillery",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://judsonandmoore.com/pages/events",
             "eventLinkMustInclude": "link",
@@ -155,21 +155,21 @@
     },
     {
         "name": "Skunk Cabbage Books",
-        "eventApiType": "bookManager",
+        "integrationType": "bookManager",
         "options": {
             "webstoreName": "9932593"
         }
     },
     {
         "name": "Logandale School",
-        "eventApiType": "chicagoPublicSchools",
+        "integrationType": "chicagoPublicSchools",
         "options": {
             "schoolName": "Logandale"
         }
     },
     {
         "name": "Oracle + Alchemy",
-        "eventApiType": "offeringTree",
+        "integrationType": "offeringTree",
         "options": {
             "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
             "url": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=0f3fedcb-a7cb-43a2-80bf-4774959f9561"
@@ -177,7 +177,7 @@
     },
     {
         "name": "Oracle + Alchemy",
-        "eventApiType": "offeringTree",
+        "integrationType": "offeringTree",
         "options": {
             "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
             "url": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=4db3610e-2828-4409-b7d7-f8b5e9b18c33"
@@ -185,7 +185,7 @@
     },
     {
         "name": "Oracle + Alchemy",
-        "eventApiType": "offeringTree",
+        "integrationType": "offeringTree",
         "options": {
             "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
             "url": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=96dc7008-eaa6-46dc-b219-1529fb59517f"
@@ -193,7 +193,7 @@
     },
     {
         "name": "Oracle + Alchemy",
-        "eventApiType": "offeringTree",
+        "integrationType": "offeringTree",
         "options": {
             "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
             "url": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=ce6e67a0-592b-4cf2-9a62-6f7f7650d655"
@@ -201,7 +201,7 @@
     },
     {
         "name": "Uprising Theater",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.eventbrite.com/o/uprising-theater-119988594591",
             "eventLinkMustInclude": "/e/",
@@ -210,7 +210,7 @@
     },
     {
         "name": "Chicago Police CAPS Meetings",
-        "eventApiType": "cpdCaps",
+        "integrationType": "cpdCaps",
         "dedupeRank": 3,
         "options": {
             "eventPageUrl": "https://www.chicagopolice.org/community-engagement-calendar/",
@@ -225,7 +225,7 @@
     },
     {
         "name": "Avondale Block Parties",
-        "eventApiType": "chicagoBlockParties",
+        "integrationType": "chicagoBlockParties",
         "dedupeRank": 3,
         "options": {
             "neighborhoodId": "22"
@@ -233,7 +233,7 @@
     },
     {
         "name": "Pumping Station One",
-        "eventApiType": "googleCalendar",
+        "integrationType": "googleCalendar",
         "dedupeRank": 3,
         "options": {
             "calendarId": "hhlp4gcgvdmifq5lcbk7e27om4@group.calendar.google.com",
@@ -242,14 +242,14 @@
     },
     {
         "name": "Honey Butter Fried Chicken",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.honeybutter.com/events"
         }
     },
     {
         "name": "Avondale Arts",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.eventbrite.com/o/avondale-arts-chicago-89841749603",
             "eventLinkMustInclude": "/e/",
@@ -258,7 +258,7 @@
     },
     {
         "name": "Avondale Mutual Aid",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.eventbrite.com/o/118946571131",
             "eventLinkMustInclude": "/e/",
@@ -267,21 +267,21 @@
     },
     {
         "name": "Five Point Holistic Health",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.fivepointholistichealth.com/events"
         }
     },
     {
         "name": "Moody's Market",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.moodysmarket.com/moodyclasses"
         }
     },
     {
         "name": "Chief O'Neill's",
-        "eventApiType": "popMenu",
+        "integrationType": "popMenu",
         "options": {
             "url": "https://www.chiefoneillspub.com",
             "sectionId": 3327818
@@ -289,7 +289,7 @@
     },
     {
         "name": "LoSAH Center of Hope",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://www.losahcenter.org/communitymentalhealthevents",
             "hubPageRequiresRendering": true,
@@ -298,7 +298,7 @@
     },
     {
         "name": "EcoShip",
-        "eventApiType": "googleCalendar",
+        "integrationType": "googleCalendar",
         "dedupeRank": 3,
         "options": {
             "calendarId": "djrjdo8lttkr78ksvt3c7gnups@group.calendar.google.com",
@@ -307,7 +307,7 @@
     },
     {
         "name": "Terracotto Plants",
-        "eventApiType": "googleCalendar",
+        "integrationType": "googleCalendar",
         "dedupeRank": 3,
         "options": {
             "calendarId": "hp2ssoso11hv9dheqt6ap8j970@group.calendar.google.com",
@@ -316,7 +316,7 @@
     },
     {
         "name": "Beer Temple",
-        "eventApiType": "googleCalendar",
+        "integrationType": "googleCalendar",
         "dedupeRank": 3,
         "options": {
             "calendarId": "info@craftbeertemple.com",
@@ -325,14 +325,14 @@
     },
     {
         "name": "LiveWire Lounge",
-        "eventApiType": "do312",
+        "integrationType": "do312",
         "options": {
             "url": "https://do312.com/venues/livewire-lounge.json"
         }
     },
     {
         "name": "The People's Cafe",
-        "eventApiType": "webCal",
+        "integrationType": "webCal",
         "options": {
             "url": "https://www.meetup.com/coffeehouse-meetup-group/events/ical/",
             "eventPageUrl": "https://www.meetup.com/coffeehouse-meetup-group/events/"
@@ -340,14 +340,14 @@
     },
     {
         "name": "Brands Park",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://brands-park.org/en/events"
         }
     },
     {
         "name": "Teddy Bear Lounge",
-        "eventApiType": "squareSpace",
+        "integrationType": "squareSpace",
         "options": {
             "url": "https://www.teddybearlounge.com/api/open/GetItemsByMonth?collectionId=69925e8db477a47dd1f291d9",
             "eventPageUrl": "https://www.teddybearlounge.com/events"
@@ -355,7 +355,7 @@
     },
     {
         "name": "Kilbourn Park",
-        "eventApiType": "googleCalendar",
+        "integrationType": "googleCalendar",
         "dedupeRank": 3,
         "options": {
             "calendarId": "kilbourncouncil@gmail.com",
@@ -364,7 +364,7 @@
     },
     {
         "name": "Night City Games",
-        "eventApiType": "jsonLd",
+        "integrationType": "jsonLd",
         "options": {
             "url": "https://nightcity.games/events/",
             "eventLinkMustInclude": "/e/"
@@ -372,7 +372,7 @@
     },
     {
         "name": "Chicago Park District",
-        "eventApiType": "chicagoParkDistrict",
+        "integrationType": "chicagoParkDistrict",
         "options": {
             "parks": [
                 "Algonquin Park",
@@ -391,7 +391,7 @@
     },
     {
         "name": "Chicago.com",
-        "eventApiType": "chicagoDotCom",
+        "integrationType": "chicagoDotCom",
         "dedupeRank": 2,
         "options": {
             "file": "input/avondaleChicagoDotComEvents.json"
@@ -399,7 +399,7 @@
     },
     {
         "name": "Avondale SBA",
-        "eventApiType": "avondaleSba",
+        "integrationType": "avondaleSba",
         "dedupeRank": 2,
         "options": {
             "url": "https://avondalesba.org"
@@ -407,7 +407,7 @@
     },
     {
         "name": "Avondale Events Form Submissions",
-        "eventApiType": "googleSheet",
+        "integrationType": "googleSheet",
         "dedupeRank": 1,
         "options": {
             "sheetId": "16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI"

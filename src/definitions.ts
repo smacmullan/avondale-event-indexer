@@ -1,4 +1,3 @@
-
 export type EventRecord = {
     name: string;
     startDate: ISODate | ISODatetime;
@@ -29,6 +28,8 @@ export type EventSource = {
      *  - 3: direct source w/o event detail pages (e.g., a Google calendar)
      */
     dedupeRank?: number;
+    /** Max time this source may take, in ms. Overrides the registry's default (120s). Raise it for slow, browser-rendered sources. */
+    timeoutMs?: number;
     /** Integration-specific; validated by the integration's parseOptions */
     options?: unknown;
 };
@@ -38,6 +39,8 @@ export interface IntegrationContext<TOptions> {
     options: TOptions;
     /** Integrations must not return events starting after this. */
     endSearchDate: Date;
+    /** Aborted when the source times out. Pass it to fetch() and any other cancellable calls (the shared fetch helpers do this automatically). */
+    signal: AbortSignal;
 }
 
 export interface EventIntegration<TOptions = unknown> {

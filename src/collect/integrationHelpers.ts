@@ -1,4 +1,5 @@
 import type { EventRecord, EventIntegration, IntegrationContext } from '../definitions.ts';
+import { currentSignal, reportWarning } from './runContext.ts';
 
 /** URL without the query string, so error messages stay short and don't leak keys. */
 function describeUrl(url: string): string {
@@ -10,9 +11,16 @@ function describeUrl(url: string): string {
     }
 }
 
-/** fetch() that throws on non-2xx responses (plain fetch only rejects on network errors). */
+/**
+ * fetch() that throws on non-2xx responses (plain fetch only rejects on network errors).
+ * Inside a registry run it is also cancelled automatically when the source times out.
+ */
 export async function fetchChecked(url: string, init?: RequestInit): Promise<Response> {
-    const response = await fetch(url, init);
+    const ambient = currentSignal();
+    const own = init?.signal ?? undefined;
+    const signal = ambient && own ? AbortSignal.any([ambient, own]) : (own ?? ambient);
+
+    const response = await fetch(url, { ...init, signal });
     if (!response.ok)
         throw new Error(`HTTP ${response.status} ${response.statusText} from ${describeUrl(url)}`.replace(/\s+/g, ' '));
     return response;
@@ -27,9 +35,9 @@ export async function fetchText(url: string, init?: RequestInit): Promise<string
 }
 
 /**
- * Converts raw items to Events, skipping bad items instead of failing the whole integration.
+ * Converts raw items to EventRecords, skipping bad items instead of failing the whole integration.
  *  - Return null/undefined from `standardize` to skip an item intentionally (silent).
- *  - Throwing counts as a parse failure; one summary line is logged for all failures.
+ *  - Throwing counts as a parse failure; one summary warning is recorded for all failures.
  */
 export function standardizeAll<T>(
     items: readonly T[],
@@ -52,13 +60,13 @@ export function standardizeAll<T>(
 
     if (failed > 0) {
         const message = firstError instanceof Error ? firstError.message : String(firstError);
-        console.warn(`[${sourceName}] Skipped ${failed} of ${items.length} events that couldn't be parsed. First error: ${message}`);
+        reportWarning(`Skipped ${failed} of ${items.length} events that couldn't be parsed. First error: ${message}`, sourceName);
     }
     return events;
 }
 
 /**
- * Build an source-specific integration on top of an existing one: the base integration
+ * Build a source-specific integration on top of an existing one: the base integration
  * fetches (and validates options as usual), then `transform` post-processes its events.
  * The new integration accepts exactly the same options as the base.
  */
