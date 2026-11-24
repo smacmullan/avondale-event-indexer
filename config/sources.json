@@ -37,7 +37,7 @@
         "name": "Firefly Fiber Arts Studio",
         "integrationType": "jsonLd",
         "options": {
-            "url": "https://www.fireflyfiberarts.com/new-events-1",
+            "url": "https://www.fireflyfiberarts.com/events",
             "hubPageRequiresRendering": true
         }
     },
@@ -328,14 +328,6 @@
         "integrationType": "do312",
         "options": {
             "url": "https://do312.com/venues/livewire-lounge.json"
-        }
-    },
-    {
-        "name": "The People's Cafe",
-        "integrationType": "webCal",
-        "options": {
-            "url": "https://www.meetup.com/coffeehouse-meetup-group/events/ical/",
-            "eventPageUrl": "https://www.meetup.com/coffeehouse-meetup-group/events/"
         }
     },
     {

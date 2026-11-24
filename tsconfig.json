@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "noEmit": true, // Optional - see note below
+    "noEmit": true,
     "target": "esnext",
     "module": "nodenext",
     "rewriteRelativeImportExtensions": true,

@@ -117,7 +117,10 @@ async function runIntegration<TOptions>(
 
         if (!Array.isArray(raw))
             throw new Error(`Integration returned ${raw === null ? 'null' : typeof raw} instead of an array of events`);
-        return finish({ status: 'ok', events: raw });
+
+        // "Stamp" where each event came from, without touching the integration's own objects
+        const origin = { name: source.name, dedupeRank: source.dedupeRank ?? 0 };
+        return finish({ status: 'ok', events: raw.map(event => ({ ...event, source: origin })) });
     } catch (error) {
         return finish({ status: 'failed', events: [], error: formatError(error) });
     } finally {

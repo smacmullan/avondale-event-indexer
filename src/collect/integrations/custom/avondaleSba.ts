@@ -30,6 +30,8 @@ export const avondaleSbaIntegration = {
         // Failing to load the sitemap throws (whole integration fails).
         const eventLinks = await extractEventLinksFromSiteMap(options.url);
  
+        console.warn('Skipping Avondale SBA event indexing until rate-limiting is fixed.')
+        return [];
         // From here on, a failure on one event page only skips that page.
         const pages = await Promise.all(
             eventLinks.map(link =>

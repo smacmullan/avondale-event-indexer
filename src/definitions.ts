@@ -1,3 +1,10 @@
+/** Where an event came from. */
+export type EventOrigin = {
+    name: string;
+    /** Lower is preferred. The source's dedupeRank with the default (0) already applied. */
+    dedupeRank: number;
+};
+
 export type EventRecord = {
     name: string;
     startDate: ISODate | ISODatetime;
@@ -6,6 +13,7 @@ export type EventRecord = {
         name: string;
     };
     url?: string;
+    source?: EventOrigin;
 }
 
 export type EventSchedule = {
