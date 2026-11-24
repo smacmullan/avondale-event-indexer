@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import type { Exporter } from '../export/exporter.ts';
-import { STAGES, type Stage } from './runPipeline.ts';
+import { STAGES, type Stage } from './runIndexerPipeline.ts';
 
 export class UsageError extends Error {
     constructor(message: string) {

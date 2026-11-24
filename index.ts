@@ -1,6 +1,6 @@
 import fs from 'node:fs';
-import { createDefaultPipeline } from './src/pipeline/defaultPipeline.ts';
-import { runPipeline } from './src/pipeline/runPipeline.ts';
+import { createDefaultIndexerPipeline } from './src/pipeline/defaultPipeline.ts';
+import { runIndexerPipeline } from './src/pipeline/runIndexerPipeline.ts';
 import { parseRunArgs, usageText, UsageError } from './src/pipeline/cliArgs.ts';
 import { ProcessStepError } from './src/process/processEvents.ts';
 import type { EventSource } from './src/definitions.ts';
@@ -12,12 +12,12 @@ try {
     const sources: EventSource[] = !args.help && args.from === 'collect'
         ? JSON.parse(fs.readFileSync('config/sources.json', 'utf-8'))
         : [];
-    const pipeline = createDefaultPipeline(sources, { weeksOut: args.weeksOut });
+    const pipeline = createDefaultIndexerPipeline(sources, { weeksOut: args.weeksOut });
 
     if (args.help) {
-        console.log(usageText(pipeline.export));
+        console.log(usageText(pipeline.exportEvents));
     } else {
-        const result = await runPipeline(pipeline, {
+        const result = await runIndexerPipeline(pipeline, {
             from: args.from,
             to: args.to,
             exporters: args.exporters,

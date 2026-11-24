@@ -3,10 +3,10 @@ import path from 'node:path';
 import type { EventRecord } from '../definitions.ts';
 
 /** The stage boundaries on disk: raw = after collecting, processed = after processing. */
-export function checkpointPaths(outputDir: string) {
+export function checkpointFilePaths(outputDir: string) {
     return {
         raw: path.join(outputDir, 'rawEvents.json'),
-        processed: path.join(outputDir, 'events.json'),
+        processed: path.join(outputDir, 'processedEvents.json'),
     };
 }
 
@@ -20,13 +20,13 @@ export function normalizeForCheckpoint(events: EventRecord[]): EventRecord[] {
 }
 
 /** `producedBy` names the stage that writes this file, for the error message. */
-export function readCheckpoint(file: string, producedBy: 'collect' | 'process'): EventRecord[] {
-    if (!fs.existsSync(file))
-        throw new Error(`"${file}" is not present. Run the ${producedBy} stage first (--from ${producedBy}).`);
-    return JSON.parse(fs.readFileSync(file, 'utf-8'));
+export function readCheckpoint(filePath: string, producedBy: 'collect' | 'process'): EventRecord[] {
+    if (!fs.existsSync(filePath))
+        throw new Error(`"${filePath}" is not present. Run the ${producedBy} stage first (--from ${producedBy}).`);
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 }
 
-export function writeCheckpoint(file: string, events: EventRecord[]): void {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, JSON.stringify(events, null, 2));
+export function writeCheckpoint(filePath: string, events: EventRecord[]): void {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(events, null, 2));
 }
