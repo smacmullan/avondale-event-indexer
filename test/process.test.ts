@@ -12,6 +12,7 @@ import { removeListed } from '../src/process/steps/removeListed.ts';
 import { trimLocations } from '../src/process/steps/trimLocations.ts';
 import { normalizeDurations } from '../src/process/steps/normalizeDurations.ts';
 import { sortEvents } from '../src/process/steps/sortEvents.ts';
+import { upcomingWeek } from '../src/process/steps/upcomingWeek.ts';
 
 const ev = (name: string, startDate = '2030-01-05T20:00:00.000Z', extra: Partial<EventRecord> = {}): EventRecord =>
     ({ name, startDate, ...extra });
@@ -153,4 +154,25 @@ test('whole-list steps work: a step can see every event at once', async () => {
 test('default steps run in the expected order', () => {
     assert.deepEqual(defaultProcessSteps.map(s => s.name),
         ['removeClosed', 'removeListed', 'trimLocations', 'normalizeDurations', 'sortEvents']);
+});
+
+test('upcomingWeek keeps events from the upcoming Monday up to (not including) the Monday after', async () => {
+    const now = new Date(2030, 0, 2, 12);   // Wednesday, January 2, 2030: upcoming week is Mon Jan 7 - Sun Jan 13
+    const at = (day: number, hour = 12) => new Date(2030, 0, day, hour).toISOString();
+    const { events, steps } = await run([
+        ev('Sunday before', at(6, 23)),
+        ev('Monday start', at(7, 0)),
+        ev('Midweek', at(9)),
+        ev('Midweek all-day', '2030-01-09'),
+        ev('Sunday end', at(13, 23)),
+        ev('Next Monday', at(14, 0)),
+    ], [upcomingWeek({ now })]);
+    assert.deepEqual(events.map(e => e.name), ['Monday start', 'Midweek', 'Midweek all-day', 'Sunday end']);
+    assert.equal(steps[0].removed.length, 2);
+});
+
+test('upcomingWeek starts the week today when today is Monday', async () => {
+    const now = new Date(2030, 0, 7, 15);   // Monday, January 7, 2030
+    const { events } = await run([ev('Earlier today', new Date(2030, 0, 7, 9).toISOString()), ev('Yesterday', new Date(2030, 0, 6, 20).toISOString())], [upcomingWeek({ now })]);
+    assert.deepEqual(events.map(e => e.name), ['Earlier today']);
 });

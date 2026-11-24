@@ -1,27 +1,39 @@
-import fs from 'fs';
-import { collectEvents } from "./src/collect/collectEvents.ts";
-import { processEvents, printProcessSummary, ProcessStepError } from './src/process/processEvents.ts';
-import { defaultProcessSteps } from './src/process/defaultSteps.ts';
-import { printEventList } from "./src/printEventList.ts";
+import fs from 'node:fs';
+import { createDefaultPipeline } from './src/pipeline/defaultPipeline.ts';
+import { runPipeline } from './src/pipeline/runPipeline.ts';
+import { parseRunArgs, usageText, UsageError } from './src/pipeline/cliArgs.ts';
+import { ProcessStepError } from './src/process/processEvents.ts';
+import type { EventSource } from './src/definitions.ts';
 
-const sources = JSON.parse(fs.readFileSync('config/sources.json', 'utf-8'));
-let events = await collectEvents(sources);
-// save raw event data
-fs.writeFileSync('output/rawEvents.json', JSON.stringify(events, null, 2));
-
-console.log("Processing event data...");
 try {
-    const processed = await processEvents(events, defaultProcessSteps);
-    printProcessSummary(processed.steps, { verbose: true });
-    events = processed.events;
-} catch (error) {
-    if (!(error instanceof ProcessStepError))
-        throw error;
-    console.error(error.message);
-    console.error('output/events.json was not updated and nothing was exported.');
-    process.exit(1);
-}
-// save processed event data
-fs.writeFileSync("output/events.json", JSON.stringify(events, null, 2));
+    const args = parseRunArgs(process.argv.slice(2));
 
-printEventList(events);
+    // Sources are only needed when collecting
+    const sources: EventSource[] = !args.help && args.from === 'collect'
+        ? JSON.parse(fs.readFileSync('config/sources.json', 'utf-8'))
+        : [];
+    const pipeline = createDefaultPipeline(sources, { weeksOut: args.weeksOut });
+
+    if (args.help) {
+        console.log(usageText(pipeline.export));
+    } else {
+        const result = await runPipeline(pipeline, {
+            from: args.from,
+            to: args.to,
+            exporters: args.exporters,
+            verbose: args.verbose,
+        });
+        if (result.exports?.some(exported => exported.status === 'failed'))
+            process.exitCode = 1;
+    }
+} catch (error) {
+    if (error instanceof UsageError) {
+        console.error(`${error.message}\nRun "node index.ts --help" for usage.`);
+    } else if (error instanceof ProcessStepError) {
+        // A failed step stops the run: events.json keeps its last good contents and nothing is exported.
+        console.error(`${error.message}\noutput/events.json was not updated and nothing was exported.`);
+    } else {
+        console.error(error instanceof Error ? (error.stack ?? error.message) : error);   // unexpected: keep the stack
+    }
+    process.exitCode = 1;
+}

@@ -7,7 +7,10 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --test",
-    "start": "node index.ts"
+    "start": "node index.ts --verbose",
+    "process": "node index.ts --from process",
+    "export": "node index.ts --from export",
+    "post-images": "node index.ts --export postImages"
   },
   "author": "Sean MacMullan",
   "license": "AGPL-3.0-or-later",
