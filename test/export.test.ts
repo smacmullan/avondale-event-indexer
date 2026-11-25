@@ -14,7 +14,7 @@ import { escapeHtml, httpUrlOrUndefined } from '../src/export/escapeHtml.ts';
 import { eventListMarkdown } from '../src/export/exporters/eventListMarkdown.ts';
 import { newsletterHtml, renderNewsletterHtml } from '../src/export/exporters/newsletterHtml.ts';
 import { postImages, splitMarkdownIntoDayHtml, wrapHtmlInStyle } from '../src/export/exporters/postImages.ts';
-import { upcomingWeek } from '../src/process/steps/upcomingWeek.ts';
+import { filterForUpcomingWeek } from '../src/process/steps/filterForUpcomingWeek.ts';
 import { ProcessStepError } from '../src/process/processEvents.ts';
 import { eventStep } from '../src/process/processStep.ts';
 
@@ -50,22 +50,22 @@ test('groupEventsByDay skips events that fail to format and reports them', () =>
 
 test('eventListMarkdown writes one heading per day and one bullet per event', async () => {
     const dir = tmp();
-    const { files } = await eventListMarkdown().export(sample, { outputDir: dir });
-    assert.deepEqual(files, [path.join(dir, 'eventList.md')]);
+    const { fileNames } = await eventListMarkdown().export(sample, { outputDir: dir });
+    assert.deepEqual(fileNames, [path.join(dir, 'eventList.md')]);
 
     const expected = `\n\n## ${formatDay(sample[0])}\n`
         + `* **${formatTimeRange(sample[0])}**   Open Mic | The Bar\n`
         + `* **${formatTimeRange(sample[1])}**   Trivia | The Bar\n`
         + `\n\n## ${formatDay(sample[2])}\n`
         + `* **${formatTimeRange(sample[2])}**   No Venue Show \n`;      // trailing space when there is no organizer
-    assert.equal(fs.readFileSync(files[0], 'utf-8'), expected);
+    assert.equal(fs.readFileSync(fileNames[0], 'utf-8'), expected);
 });
 
 test('eventListMarkdown honors a custom file path and rejects unknown options', async () => {
     const dir = tmp();
-    const file = path.join(dir, 'nested', 'list.md');
-    const { files } = await eventListMarkdown({ file }).export(sample, { outputDir: 'unused' });
-    assert.deepEqual(files, [file]);
+    const fileName = path.join(dir, 'nested', 'list.md');
+    const { fileNames } = await eventListMarkdown({ fileName }).export(sample, { outputDir: 'unused' });
+    assert.deepEqual(fileNames, [fileName]);
     assert.throws(() => eventListMarkdown({ flie: 'x' } as any));
 });
 
@@ -83,8 +83,8 @@ test('newsletterHtml escapes scraped data and only links http(s) URLs', async ()
         ev('<img src=x onerror=alert(1)> Show', at(8, 19), { organizer: { name: 'A & B' }, url: 'https://ok.test/e?a=1&b="2"' }),
         ev('Sneaky', at(8, 20), { url: 'javascript:alert(1)' }),
     ];
-    const { files, warnings } = await newsletterHtml().export(evil, { outputDir: dir });
-    const html = fs.readFileSync(files[0], 'utf-8');
+    const { fileNames, warnings } = await newsletterHtml().export(evil, { outputDir: dir });
+    const html = fs.readFileSync(fileNames[0], 'utf-8');
 
     assert.ok(!html.includes('<img'));
     assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt; Show'));
@@ -110,8 +110,8 @@ test('newsletterHtml warns when there are no events', async () => {
 
 test('withSteps runs its steps before the exporter and keeps the exporter\'s settings', async () => {
     const received: string[][] = [];
-    const base: Exporter = { name: 'spy', onDemand: true, needsEvents: true, async export(events) { received.push(events.map(e => e.name)); return { files: [] }; } };
-    const wrapped = withSteps(base, [upcomingWeek({ now: new Date(2030, 0, 2, 12) })]);
+    const base: Exporter = { name: 'spy', onDemand: true, needsEvents: true, async export(events) { received.push(events.map(e => e.name)); return { fileNames: [] }; } };
+    const wrapped = withSteps(base, [filterForUpcomingWeek({ now: new Date(2030, 0, 2, 12) })]);
     assert.deepEqual([wrapped.name, wrapped.onDemand, wrapped.needsEvents], ['spy', true, true]);
 
     await wrapped.export([ev('This week', at(9, 12)), ev('Too early', at(3, 12))], { outputDir: 'unused' });
@@ -119,9 +119,9 @@ test('withSteps runs its steps before the exporter and keeps the exporter\'s set
 });
 
 test('a failing step inside withSteps fails only that exporter', async () => {
-    const good: Exporter = { name: 'good', async export() { return { files: ['g.txt'] }; } };
+    const good: Exporter = { name: 'good', async export() { return { fileNames: ['g.txt'] }; } };
     const boom = eventStep('boom', () => { throw new Error('bad data'); });
-    const wrapped = withSteps({ name: 'wrapped', async export() { return { files: ['w.txt'] }; } }, [boom]);
+    const wrapped = withSteps({ name: 'wrapped', async export() { return { fileNames: ['w.txt'] }; } }, [boom]);
 
     const results = await exportEvents(sample, [wrapped, good], { outputDir: 'unused' });
     assert.deepEqual(results.map(r => [r.exporter, r.status]), [['wrapped', 'failed'], ['good', 'ok']]);
@@ -130,7 +130,7 @@ test('a failing step inside withSteps fails only that exporter', async () => {
 });
 
 test('exportEvents reports warnings and formats a summary', async () => {
-    const warns: Exporter = { name: 'warns', async export() { return { files: ['a.md'], warnings: ['careful'] }; } };
+    const warns: Exporter = { name: 'warns', async export() { return { fileNames: ['a.md'], warnings: ['careful'] }; } };
     const broken: Exporter = { name: 'broken', async export() { throw new Error('disk full'); } };
     const results = await exportEvents(sample, [warns, broken], { outputDir: 'unused' });
     const summary = formatExportSummary(results, ['postImages']);
@@ -153,8 +153,8 @@ test('postImages splits markdown into one chunk per day (heading plus the list a
 
 test('postImages renders what the markdown exporter wrote', async () => {
     const dir = tmp();
-    const { files } = await eventListMarkdown().export(sample, { outputDir: dir });
-    const days = splitMarkdownIntoDayHtml(fs.readFileSync(files[0], 'utf-8'), new MarkdownIt());
+    const { fileNames } = await eventListMarkdown().export(sample, { outputDir: dir });
+    const days = splitMarkdownIntoDayHtml(fs.readFileSync(fileNames[0], 'utf-8'), new MarkdownIt());
     assert.equal(days.length, 2);
     assert.ok(wrapHtmlInStyle(days[0]).includes(days[0]));
 });

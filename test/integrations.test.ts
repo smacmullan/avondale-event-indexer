@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { google } from 'googleapis';
-import { fetchGoogleCalendarEvents } from '../src/utils/integrations/googleCalendar.ts';
-import { standardizeJsonLdEvent } from '../src/utils/integrations/jsonLd.ts';
-import { fetchWebCalEvents } from '../src/utils/integrations/webcal.ts';
+import type { EventSource } from '../src/definitions.ts';
+import { googleCalendarIntegration } from '../src/collect/integrations/googleCalendar.ts';
+import { jsonLdIntegration, standardizeJsonLdEvent } from '../src/collect/integrations/jsonLd.ts';
+import { webCalIntegration } from '../src/collect/integrations/webcal.ts';
 
 function upcomingDate(daysAhead: number) {
     const date = new Date();
@@ -11,27 +12,7 @@ function upcomingDate(daysAhead: number) {
     return date;
 }
 
-function isCalendarListRequest(value: unknown): value is {
-    calendarId: string;
-    timeMax: string;
-    maxResults: number;
-    singleEvents: boolean;
-    orderBy: string;
-} {
-    return typeof value === 'object' && value !== null
-        && 'calendarId' in value
-        && typeof value.calendarId === 'string'
-        && 'timeMax' in value
-        && typeof value.timeMax === 'string'
-        && 'maxResults' in value
-        && typeof value.maxResults === 'number'
-        && 'singleEvents' in value
-        && typeof value.singleEvents === 'boolean'
-        && 'orderBy' in value
-        && typeof value.orderBy === 'string';
-}
-
-test('JSON-LD normalization decodes text and falls back to the organization name', () => {
+test('JSON-LD normalization decodes text and falls back to the source name', () => {
     assert.deepEqual(
         standardizeJsonLdEvent(
             {
@@ -40,7 +21,7 @@ test('JSON-LD normalization decodes text and falls back to the organization name
                 location: { name: 'Studio &amp; Gallery' },
                 url: 'https://example.test/event',
             },
-            { name: 'Fallback Org', eventApiType: 'jsonLd', api: 'https://example.test/events' },
+            { name: 'Fallback Source', integrationType: 'jsonLd' },
         ),
         {
             name: 'Arts & Crafts',
@@ -50,9 +31,16 @@ test('JSON-LD normalization decodes text and falls back to the organization name
             url: 'https://example.test/event',
         },
     );
+    assert.equal(
+        standardizeJsonLdEvent(
+            { name: 'No Location', startDate: '2026-06-01' },
+            { name: 'Fallback Source', integrationType: 'jsonLd' },
+        ).organizer?.name,
+        'Fallback Source',
+    );
 });
 
-test('JSON-LD integration', async t => {
+test('JSON-LD integration deduplicates hub links and excludes non-event metadata', async t => {
     const eventDate = upcomingDate(2);
     const startDate = new Date(eventDate);
     startDate.setHours(18, 0, 0, 0);
@@ -70,36 +58,35 @@ test('JSON-LD integration', async t => {
 
     const requestedUrls: string[] = [];
     t.mock.method(globalThis, 'fetch', async (input: string | URL | Request) => {
-        requestedUrls.push(String(input));
-        if (String(input) === 'https://example.test/events') {
-            return new Response(
-                '<a href="/events/concert?source=calendar">Concert</a><a href="/events/concert">Duplicate link</a>',
-            );
-        }
+        const url = String(input);
+        requestedUrls.push(url);
+        if (url === 'https://example.test/events')
+            return new Response('<a href="/events/concert?source=calendar">Concert</a><a href="/events/concert">Duplicate link</a>');
         return new Response(eventHtml);
     });
 
-    const { fetchJsonLdEvents } = await import('../src/utils/integrations/jsonLd.ts');
-    const events = await fetchJsonLdEvents(
-        { name: 'Local Org', eventApiType: 'jsonLd', api: 'https://example.test/events' },
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    );
-
-    await t.test('returns event data and excludes non-event metadata', () => {
-        assert.equal(events.length, 1);
-        assert.equal(events[0].name, 'Neighborhood Concert');
-        assert.equal(events[0].organizer?.name, 'Local Stage');
+    const source: EventSource = {
+        name: 'Local Source',
+        integrationType: 'jsonLd',
+        options: { url: 'https://example.test/events' },
+    };
+    const events = await jsonLdIntegration.fetchEvents({
+        source,
+        options: jsonLdIntegration.parseOptions(source.options),
+        endSearchDate: upcomingDate(7),
+        signal: new AbortController().signal,
     });
 
-    await t.test('fetches the hub and one normalized URL for duplicate links', () => {
-        assert.deepEqual(requestedUrls.sort(), [
-            'https://example.test/events',
-            'https://example.test/events/concert',
-        ]);
-    });
+    assert.equal(events.length, 1);
+    assert.equal(events[0].name, 'Neighborhood Concert');
+    assert.equal(events[0].organizer?.name, 'Local Stage');
+    assert.deepEqual(requestedUrls.sort(), [
+        'https://example.test/events',
+        'https://example.test/events/concert',
+    ]);
 });
 
-test('Google Calendar integration', async t => {
+test('Google Calendar integration maps timed and all-day events using current options', async t => {
     const timedStart = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     const timedEnd = new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString();
     const calendarClient = google.calendar({ version: 'v3' });
@@ -133,61 +120,63 @@ test('Google Calendar integration', async t => {
             return calendarClient;
         },
     });
+    const originalApiKey = process.env.GOOGLE_API_KEY;
+    process.env.GOOGLE_API_KEY = 'test-api-key';
     t.after(() => {
-        if (originalCalendarDescriptor) {
+        if (originalCalendarDescriptor)
             Object.defineProperty(google, 'calendar', originalCalendarDescriptor);
-        } else {
+        else
             Reflect.deleteProperty(google, 'calendar');
-        }
-    });
-    const endSearchDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    const events = await fetchGoogleCalendarEvents(
-        {
-            name: 'Calendar Org',
-            eventApiType: 'googleCalendar',
-            api: 'calendar@example.test',
-            googleCalendarUseLocation: true,
+        if (originalApiKey === undefined)
+            delete process.env.GOOGLE_API_KEY;
+        else
+            process.env.GOOGLE_API_KEY = originalApiKey;
+    });
+    const endSearchDate = upcomingDate(7);
+    const source: EventSource = {
+        name: 'Calendar Source',
+        integrationType: 'googleCalendar',
+        options: {
+            calendarId: 'calendar@example.test',
+            useLocation: true,
             eventPageUrl: 'https://example.test/calendar',
         },
+    };
+
+    const events = await googleCalendarIntegration.fetchEvents({
+        source,
+        options: googleCalendarIntegration.parseOptions(source.options),
         endSearchDate,
-    );
-
-    await t.test('queries the configured calendar within the requested range', () => {
-        assert.equal(calendarFactoryCallCount, 1);
-        assert.equal(listMock.mock.callCount(), 1);
-        assert.ok(isCalendarListRequest(listRequest));
-        const request = listRequest;
-        assert.equal(request.calendarId, 'calendar@example.test');
-        assert.equal(request.timeMax, endSearchDate.toISOString());
-        assert.equal(request.maxResults, 20);
-        assert.equal(request.singleEvents, true);
-        assert.equal(request.orderBy, 'startTime');
+        signal: new AbortController().signal,
     });
 
-    await t.test('maps timed events and appends their location to the organizer', () => {
-        assert.equal(events.length, 2);
-        assert.deepEqual(events[0], {
-            name: 'Evening Workshop',
-            startDate: timedStart,
-            endDate: timedEnd,
-            organizer: { name: 'Calendar Org @ 123 Main St' },
-            url: 'https://example.test/calendar',
-        });
+    assert.equal(calendarFactoryCallCount, 1);
+    assert.equal(listMock.mock.callCount(), 1);
+    assert.equal(typeof listRequest, 'object');
+    assert.equal((listRequest as { calendarId: string }).calendarId, 'calendar@example.test');
+    assert.equal((listRequest as { timeMax: string }).timeMax, endSearchDate.toISOString());
+    assert.equal((listRequest as { maxResults: number }).maxResults, 20);
+    assert.equal((listRequest as { singleEvents: boolean }).singleEvents, true);
+    assert.equal((listRequest as { orderBy: string }).orderBy, 'startTime');
+    assert.equal(events.length, 2);
+    assert.deepEqual(events[0], {
+        name: 'Evening Workshop',
+        startDate: timedStart,
+        endDate: timedEnd,
+        organizer: { name: 'Calendar Source @ 123 Main St' },
+        url: 'https://example.test/calendar',
     });
-
-    await t.test('maps all-day date fields and uses the organization name without a location', () => {
-        assert.deepEqual(events[1], {
-            name: 'All-day Market',
-            startDate: '2026-06-01',
-            endDate: '2026-06-02',
-            organizer: { name: 'Calendar Org' },
-            url: 'https://example.test/calendar',
-        });
+    assert.deepEqual(events[1], {
+        name: 'All-day Market',
+        startDate: '2026-06-01',
+        endDate: '2026-06-02',
+        organizer: { name: 'Calendar Source' },
+        url: 'https://example.test/calendar',
     });
 });
 
-test('WebCal integration', async t => {
+test('WebCal integration decodes summaries, uses configured URLs, and falls back to the source name', async t => {
     const start = upcomingDate(2);
     start.setHours(18, 0, 0, 0);
     const end = new Date(start);
@@ -212,31 +201,25 @@ END:VEVENT
 END:VCALENDAR`;
 
     t.mock.method(globalThis, 'fetch', async () => new Response(calendar));
-
-    const events = await fetchWebCalEvents(
-        {
-            name: 'Calendar Org',
-            eventApiType: 'webCal',
-            api: 'https://example.test/events.ics',
+    const source: EventSource = {
+        name: 'Calendar Source',
+        integrationType: 'webCal',
+        options: {
+            url: 'https://example.test/events.ics',
             eventPageUrl: 'https://example.test/calendar',
         },
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    );
-
+    };
+    const events = await webCalIntegration.fetchEvents({
+        source,
+        options: webCalIntegration.parseOptions(source.options),
+        endSearchDate: upcomingDate(7),
+        signal: new AbortController().signal,
+    });
     const eventWithoutOrganizerName = events.find(event => event.name === 'Arts & Music');
     const eventWithOrganizerValue = events.find(event => event.name === 'Named Organizer Event');
 
-    await t.test('decodes the summary and falls back when the organizer has no value object', () => {
-        assert.equal(events.length, 2);
-        assert.equal(eventWithoutOrganizerName?.name, 'Arts & Music');
-        assert.equal(eventWithoutOrganizerName?.organizer?.name, 'Calendar Org');
-    });
-
-    await t.test('uses a structured organizer value when present', () => {
-        assert.equal(eventWithOrganizerValue?.organizer?.name, 'mailto:host@example.test');
-    });
-
-    await t.test('attaches the configured event page URL', () => {
-        assert.equal(eventWithoutOrganizerName?.url, 'https://example.test/calendar');
-    });
+    assert.equal(events.length, 2);
+    assert.equal(eventWithoutOrganizerName?.organizer?.name, 'Calendar Source');
+    assert.equal(eventWithOrganizerValue?.organizer?.name, 'mailto:host@example.test');
+    assert.equal(eventWithoutOrganizerName?.url, 'https://example.test/calendar');
 });

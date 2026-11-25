@@ -26,7 +26,7 @@ export function eventsJson(rawOptions: EventsJsonOptions = {}): Exporter {
             const strippedEvents = events.map(({ source, ...event }) => event);
 
             fs.mkdirSync(path.dirname(fileName), { recursive: true });
-            fs.writeFileSync(fileName, JSON.stringify({ strippedEvents }));
+            fs.writeFileSync(fileName, JSON.stringify(strippedEvents));
 
             return { fileNames: [fileName] };
         },

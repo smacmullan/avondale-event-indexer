@@ -8,11 +8,11 @@ import { eventStep, type ProcessStep } from '../src/process/processStep.ts';
 import { processEvents, formatProcessSummary, ProcessStepError } from '../src/process/processEvents.ts';
 import { defaultProcessSteps } from '../src/process/defaultSteps.ts';
 import { removeClosed } from '../src/process/steps/removeClosed.ts';
-import { removeListed } from '../src/process/steps/removeListed.ts';
+import { removeExcludedEvents } from '../src/process/steps/removeExcludedEvents.ts';
 import { trimLocations } from '../src/process/steps/trimLocations.ts';
 import { normalizeDurations } from '../src/process/steps/normalizeDurations.ts';
 import { sortEvents } from '../src/process/steps/sortEvents.ts';
-import { upcomingWeek } from '../src/process/steps/upcomingWeek.ts';
+import { filterForUpcomingWeek } from '../src/process/steps/filterForUpcomingWeek.ts';
 
 const ev = (name: string, startDate = '2030-01-05T20:00:00.000Z', extra: Partial<EventRecord> = {}): EventRecord =>
     ({ name, startDate, ...extra });
@@ -28,8 +28,8 @@ test('removeClosed removes unnamed, closed, and sold out events', async () => {
     assert.deepEqual(steps[0].removed.map(r => r.reason), ['name contains "closed"', 'name contains "sold out"', 'no name']);
 });
 
-test('removeListed matches name (trimmed) and organizer', async () => {
-    const step = removeListed({ entries: [{ name: 'Trivia', organizer: 'Bar' }, { name: 'Loner' }] });
+test('removeExcludedEvents matches name (trimmed) and organizer', async () => {
+    const step = removeExcludedEvents({ entries: [{ name: 'Trivia', organizer: 'Bar' }, { name: 'Loner' }] });
     const { events } = await run([
         ev(' Trivia ', undefined, { organizer: { name: 'Bar' } }),      // removed
         ev('Trivia', undefined, { organizer: { name: 'Other Venue' } }), // kept: different organizer
@@ -39,23 +39,49 @@ test('removeListed matches name (trimmed) and organizer', async () => {
     assert.deepEqual(events.map(e => `${e.name.trim()}|${e.organizer?.name}`), ['Trivia|Other Venue', 'Loner|Bar']);
 });
 
-test('removeListed reads its file lazily, and a missing file stops the pipeline', async () => {
+test('removeExcludedEvents reads its file lazily, and a missing file stops the pipeline', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'filter-'));
     const file = path.join(dir, 'list.json');
-    const step = removeListed({ file });                 // constructing does no file IO
+    const step = removeExcludedEvents({ file });         // constructing does no file IO
     await assert.rejects(() => run([ev('A')], [step]), (error: unknown) => {
         assert.ok(error instanceof ProcessStepError);
-        assert.equal(error.step, 'removeListed');
+        assert.equal(error.step, 'removeExcludedEvents');
         return true;
     });
     fs.writeFileSync(file, JSON.stringify([{ name: 'A', organizer: 'X' }]));
-    const { events } = await run([ev('A', undefined, { organizer: { name: 'X' } }), ev('B')], [removeListed({ file })]);
+    const { events } = await run([ev('A', undefined, { organizer: { name: 'X' } }), ev('B')], [removeExcludedEvents({ file })]);
     assert.deepEqual(events.map(e => e.name), ['B']);
 });
 
-test('removeListed rejects bad options when the pipeline is built', () => {
-    assert.throws(() => removeListed({} as any));
-    assert.throws(() => removeListed({ file: 'a.json', entries: [] } as any));
+test('removeExcludedEvents reports malformed JSON and invalid entries', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'filter-'));
+    const cases = [
+        { file: 'malformed.json', content: 'not json', isJsonError: true },
+        { file: 'invalid-entries.json', content: JSON.stringify([{ organizer: 'Venue' }]), isJsonError: false },
+    ];
+
+    for (const { file, content, isJsonError } of cases) {
+        const filePath = path.join(dir, file);
+        fs.writeFileSync(filePath, content);
+
+        await assert.rejects(() => run([ev('A')], [removeExcludedEvents({ file: filePath })]), (error: unknown) => {
+            assert.ok(error instanceof ProcessStepError);
+            assert.equal(error.step, 'removeExcludedEvents');
+            if (isJsonError) {
+                assert.ok(error.cause instanceof SyntaxError);
+            } else {
+                assert.ok(error.cause instanceof Error);
+                assert.match(error.cause.message, /Invalid filter list/);
+                assert.match(error.cause.message, /0\.name/);
+            }
+            return true;
+        });
+    }
+});
+
+test('removeExcludedEvents rejects bad options when the pipeline is built', () => {
+    assert.throws(() => removeExcludedEvents({} as any));
+    assert.throws(() => removeExcludedEvents({ file: 'a.json', entries: [] } as any));
 });
 
 test('trimLocations trims at @, em dash, and "at", and leaves other names untouched', async () => {
@@ -93,7 +119,7 @@ test('source survives the built-in cleaning steps', async () => {
     const source = { name: 'Venue', dedupeRank: 0 };
     const { events } = await run(
         [ev('Open Mic @ Bar', local(5, 10), { source, endDate: local(7, 12) })],
-        [removeClosed(), removeListed({ entries: [] }), trimLocations(), normalizeDurations(), sortEvents()]);
+        [removeClosed(), removeExcludedEvents({ entries: [] }), trimLocations(), normalizeDurations(), sortEvents()]);
     assert.deepEqual(events[0].source, source);
     assert.equal(events[0].name, 'Open Mic');
 });
@@ -153,10 +179,10 @@ test('whole-list steps work: a step can see every event at once', async () => {
 
 test('default steps run in the expected order', () => {
     assert.deepEqual(defaultProcessSteps.map(s => s.name),
-        ['removeClosed', 'removeListed', 'trimLocations', 'normalizeDurations', 'sortEvents']);
+        ['removeClosed', 'removeExcludedEvents', 'trimLocations', 'normalizeDurations', 'sortEvents']);
 });
 
-test('upcomingWeek keeps events from the upcoming Monday up to (not including) the Monday after', async () => {
+test('filterForUpcomingWeek keeps events from the upcoming Monday up to (not including) the Monday after', async () => {
     const now = new Date(2030, 0, 2, 12);   // Wednesday, January 2, 2030: upcoming week is Mon Jan 7 - Sun Jan 13
     const at = (day: number, hour = 12) => new Date(2030, 0, day, hour).toISOString();
     const { events, steps } = await run([
@@ -166,13 +192,13 @@ test('upcomingWeek keeps events from the upcoming Monday up to (not including) t
         ev('Midweek all-day', '2030-01-09'),
         ev('Sunday end', at(13, 23)),
         ev('Next Monday', at(14, 0)),
-    ], [upcomingWeek({ now })]);
+    ], [filterForUpcomingWeek({ now })]);
     assert.deepEqual(events.map(e => e.name), ['Monday start', 'Midweek', 'Midweek all-day', 'Sunday end']);
     assert.equal(steps[0].removed.length, 2);
 });
 
-test('upcomingWeek starts the week today when today is Monday', async () => {
+test('filterForUpcomingWeek starts the week today when today is Monday', async () => {
     const now = new Date(2030, 0, 7, 15);   // Monday, January 7, 2030
-    const { events } = await run([ev('Earlier today', new Date(2030, 0, 7, 9).toISOString()), ev('Yesterday', new Date(2030, 0, 6, 20).toISOString())], [upcomingWeek({ now })]);
+    const { events } = await run([ev('Earlier today', new Date(2030, 0, 7, 9).toISOString()), ev('Yesterday', new Date(2030, 0, 6, 20).toISOString())], [filterForUpcomingWeek({ now })]);
     assert.deepEqual(events.map(e => e.name), ['Earlier today']);
 });
