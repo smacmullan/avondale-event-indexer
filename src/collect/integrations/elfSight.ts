@@ -1,13 +1,14 @@
 import { z } from 'zod';
-import type { EventRecord, EventIntegration, EventSource } from '../../definitions.ts';
+import type { EventRecord, EventSource } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** ElfSight widget data URL. Must include the widget id as the `w` query parameter. */
-    url: z.url(),
-    /** Link to the organization's public events page, used as each event's url */
-    eventPageUrl: z.url().optional(),
+    url: z.url()
+        .describe('ElfSight widget data URL, including the widget ID as the "w" query parameter'),
+    eventPageUrl: z.url().optional()
+        .describe("Link to the organization's public events page, used as each event's url"),
 }).strict().refine(
     options => new URL(options.url).searchParams.has('w'),
     { message: 'url must include a "w" (widget id) query parameter', path: ['url'] },
@@ -15,10 +16,23 @@ const optionsSchema = z.object({
 
 export type ElfSightOptions = z.infer<typeof optionsSchema>;
 
-export const elfSightIntegration = {
+export const elfSightIntegration = defineIntegration({
     type: 'elfSight',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'ElfSight',
+        summary: 'Events from an ElfSight events widget.',
+        details:
+            'Provide the widget data URL, including its widget ID in the w query parameter. Find the request URL ' +
+            'in the page network requests using browser developer tools. eventPageUrl is an optional public page ' +
+            'used as the link for each event.',
+        example: {
+            url: 'https://app.elfsight.com/p/platform.js?w=example-widget',
+            eventPageUrl: 'https://example.com/events',
+        },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         const data = await fetchJson(options.url);
@@ -33,7 +47,7 @@ export const elfSightIntegration = {
         // The widget data can't filter by date, so filter here.
         return events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
-} satisfies EventIntegration<ElfSightOptions>;
+});
 
 function extractEventArray(json: any, url: string): any[] {
     const widgetKey = new URL(url).searchParams.get('w') || '';

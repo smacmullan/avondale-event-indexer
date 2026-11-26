@@ -1,23 +1,40 @@
 import { google } from 'googleapis';
 import { z } from 'zod';
-import type { EventRecord, EventIntegration } from '../../definitions.ts';
-process.loadEnvFile();
+import type { EventRecord } from '../../definitions.ts';
+import { defineIntegration } from '../defineIntegration.ts';
+
+try {
+    process.loadEnvFile();
+} catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
+        throw error;
+}
 
 const optionsSchema = z.object({
-    /** Google Calendar ID (often an email address or ...@group.calendar.google.com) */
-    calendarId: z.string().min(1),
-    /** Link to the organization's public events page, used as each event's url */
-    eventPageUrl: z.url().optional(),
-    /** Append the event's location to the organizer name ("Org @ Location") */
-    useLocation: z.boolean().default(false),
+    calendarId: z.string().min(1)
+        .describe('Google Calendar ID (often an email address or ...@group.calendar.google.com)'),
+    eventPageUrl: z.url().optional()
+        .describe("Link to the organization's public events page, used as each event's url"),
+    useLocation: z.boolean().default(false)
+        .describe('Append the event location to the organizer name ("Org @ Location")'),
 }).strict();
 
 export type GoogleCalendarOptions = z.infer<typeof optionsSchema>;
 
-export const googleCalendarIntegration = {
+export const googleCalendarIntegration = defineIntegration({
     type: 'googleCalendar',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Google Calendar',
+        summary: 'Events from a public Google Calendar accessed with an API key.',
+        details:
+            'Provide the calendar ID, often shown in the calendar settings as an email-like address. The calendar ' +
+            'must be public because this integration uses an API key rather than OAuth.',
+        requiresEnv: ['GOOGLE_API_KEY'],
+        example: { calendarId: 'example@group.calendar.google.com' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         const apiKey = process.env.GOOGLE_API_KEY;
@@ -40,7 +57,7 @@ export const googleCalendarIntegration = {
         const events = response.data.items || [];
         return events.map(event => standardizeGoogleEvent(event, source.name, options));
     },
-} satisfies EventIntegration<GoogleCalendarOptions>;
+});
 
 function standardizeGoogleEvent(event: any, sourceName: string, options: GoogleCalendarOptions): EventRecord {
     let organizationName = sourceName;

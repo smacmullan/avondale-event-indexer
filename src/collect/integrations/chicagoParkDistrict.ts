@@ -1,20 +1,27 @@
 import { z } from 'zod';
-import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import type { EventRecord } from '../../definitions.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** Park names exactly as they appear in the data portal's `location_facility` column */
     parks: z.array(
         z.string().trim().min(1).refine(name => !name.includes('"'), 'must not contain double quotes (names go into a query)')
-    ).min(1),
+    ).min(1).describe("Park names exactly as they appear in the data portal's location_facility column"),
 }).strict();
 
 export type ChicagoParkDistrictOptions = z.infer<typeof optionsSchema>;
 
-export const chicagoParkDistrictIntegration = {
+export const chicagoParkDistrictIntegration = defineIntegration({
     type: 'chicagoParkDistrict',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Chicago Park District',
+        summary: 'Events and activities at Chicago Park District facilities.',
+        details: 'Queries the City of Chicago open data portal for activities at the specified facilities.',
+        example: { parks: ['Example Park'] },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         // The query filters by date range, so no post-filtering is needed.
@@ -24,7 +31,7 @@ export const chicagoParkDistrictIntegration = {
 
         return standardizeAll(data, standardizeParkDistrictEvent, source.name);
     },
-} satisfies EventIntegration<ChicagoParkDistrictOptions>;
+});
 
 /** Generate API URL to get park district event data from City of Chicago's Open Data Portal */
 function generateApiUrl(options: ChicagoParkDistrictOptions, endSearchDate: Date): string {

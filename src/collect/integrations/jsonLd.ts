@@ -2,30 +2,46 @@ import * as cheerio from 'cheerio';
 import { z } from 'zod';
 import type { Page } from 'puppeteer';
 import { decodeHtmlEntities } from '../../utils/html.ts';
-import type { EventSource, EventRecord, EventIntegration } from '../../definitions.ts';
+import type { EventSource, EventRecord } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import PuppeteerQueueManager from '../../utils/puppeteerQueueManager.ts';
 import { fetchText, standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** The event "hub" page that links to individual event pages */
-    url: z.url(),
-    /** Event links ending with any of these are ignored */
-    linkBlockList: z.array(z.string()).optional(),
-    /** If set, only links containing this string count as event links */
-    eventLinkMustInclude: z.string().optional(),
-    /** The hub page needs a headless browser to render its links */
-    hubPageRequiresRendering: z.boolean().default(false),
-    /** The individual event pages need a headless browser to render their JSON-LD */
-    eventPagesRequireRendering: z.boolean().default(false),
+    url: z.url()
+        .describe('The event "hub" page that links to individual event pages'),
+    linkBlockList: z.array(z.string()).optional()
+        .describe('Event links ending with any of these are ignored (useful when the site links to another view of the same events)'),
+    eventLinkMustInclude: z.string().optional()
+        .describe('If set, only links containing this text count as event links. By default, links under the hub page\'s path or containing "event" count'),
+    hubPageRequiresRendering: z.boolean().default(false)
+        .describe('The hub page loads its links dynamically and needs a headless browser (slower, more resource intensive)'),
+    eventPagesRequireRendering: z.boolean().default(false)
+        .describe('The event pages load their JSON-LD dynamically and need a headless browser (slower, more resource intensive)'),
 }).strict();
 
 export type JsonLdOptions = z.infer<typeof optionsSchema>;
 
-export const jsonLdIntegration = {
+export const jsonLdIntegration = defineIntegration({
     type: 'jsonLd',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'JSON-LD',
+        summary: 'Reads JSON-LD data embedded in event web pages. The preferred integration.',
+        details:
+            "JSON-LD is a web standard for embedding structured data in a page's HTML (a script tag of type " +
+            '"application/ld+json"). Search engines such as Google index it too, so it is the preferred way for ' +
+            'an organization to publish its events. Each event should have its own web page.\n\n' +
+            "How it works: the hub page is loaded and its links collected and de-duplicated, then each link is " +
+            "fetched and any JSON-LD Event data on it is read.\n\n" +
+            'Some sites load their links or JSON-LD dynamically and need a headless browser; see the rendering ' +
+            "options. This is much slower and heavier (pages are rendered through a shared queue), so consider " +
+            "raising the source's timeoutMs.",
+        example: { url: 'https://example.com/events' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         // Failing to load the hub page throws (whole integration fails).
@@ -70,7 +86,7 @@ export const jsonLdIntegration = {
             events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate))
         );
     },
-} satisfies EventIntegration<JsonLdOptions>;
+});
 
 
 /**

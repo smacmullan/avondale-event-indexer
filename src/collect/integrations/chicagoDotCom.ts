@@ -1,20 +1,30 @@
 import { z } from 'zod';
 import { readFile } from 'fs/promises';
-import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import type { EventRecord } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** Path to a JSON file copied from the Chicago.com site (resolved from the working directory) */
-    file: z.string().min(1),
+    file: z.string().min(1)
+        .describe('Path to a JSON file copied from the Chicago.com site, resolved from the working directory'),
 }).strict();
 
 export type ChicagoDotComOptions = z.infer<typeof optionsSchema>;
 
-export const chicagoDotComIntegration = {
+export const chicagoDotComIntegration = defineIntegration({
     type: 'chicagoDotCom',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Chicago.com',
+        summary: 'Events from Chicago.com data saved to a local JSON file.',
+        details:
+            'Chicago.com does not currently provide a public events API for this integration. Save the site response ' +
+            'as a JSON file with an events array, then provide its path relative to the working directory.',
+        example: { file: './data/chicago-com-events.json' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         // Chicago.com does not have a public events API yet, so response data is copied to a file.
@@ -29,7 +39,7 @@ export const chicagoDotComIntegration = {
         // A file has no date filter, so filter here.
         return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
-} satisfies EventIntegration<ChicagoDotComOptions>;
+});
 
 
 function standardizeChicagoDotComEvent(event: any): EventRecord {

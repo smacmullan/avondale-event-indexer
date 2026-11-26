@@ -1,4 +1,4 @@
-import type { EventRecord, EventIntegration, IntegrationContext } from '../definitions.ts';
+import type { EventRecord, EventIntegration, IntegrationContext, IntegrationDocs } from '../definitions.ts';
 import { currentSignal, reportWarning } from './runContext.ts';
 
 /** URL without the query string, so error messages stay short and don't leak keys. */
@@ -68,15 +68,19 @@ export function standardizeAll<T>(
 /**
  * Build a source-specific integration on top of an existing one: the base integration
  * fetches (and validates options as usual), then `transform` post-processes its events.
- * The new integration accepts exactly the same options as the base.
+ * The new integration accepts exactly the same options as the base (same schema), and
+ * inherits `requiresEnv` unless `docs` sets its own. `docs.basedOn` is filled in for you.
  */
 export function withTransform<TOptions>(
     base: EventIntegration<TOptions>,
     type: string,
+    docs: Omit<IntegrationDocs, 'basedOn'>,
     transform: (events: EventRecord[], ctx: IntegrationContext<TOptions>) => EventRecord[],
 ): EventIntegration<TOptions> {
     return {
         type,
+        docs: { requiresEnv: base.docs.requiresEnv, ...docs, basedOn: base.type },
+        optionsSchema: base.optionsSchema,
         parseOptions: raw => base.parseOptions(raw),
         async fetchEvents(ctx) {
             return transform(await base.fetchEvents(ctx), ctx);

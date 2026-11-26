@@ -1,21 +1,32 @@
 import { z } from 'zod';
-import type { EventRecord, EventIntegration, EventSource } from '../../definitions.ts';
+import type { EventRecord, EventSource } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** BookManager "webstore_name" for the store. The numeric store id is looked up from this. */
-    webstoreName: z.string().min(1),
+    webstoreName: z.string().min(1)
+        .describe('BookManager "webstore_name" for the store. The numeric store id is looked up from this'),
 }).strict();
 
 export type BookManagerOptions = z.infer<typeof optionsSchema>;
 
 const API_BASE = 'https://api.bookmanager.com/customer';
 
-export const bookManagerIntegration = {
+export const bookManagerIntegration = defineIntegration({
     type: 'bookManager',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'BookManager',
+        summary: "Events from bookstores that use BookManager's webstore.",
+        details:
+            'BookManager is a tool used by some bookstores. To find the webstoreName, open the bookstore\'s events ' +
+            'page, open the browser developer console (Network tab), and look at the POST requests the page makes. ' +
+            'The "getSettings" request has webstore_name in its payload.',
+        example: { webstoreName: '9999999' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         const { storeId, baseUrl } = await getStoreInfo(options.webstoreName);
@@ -26,7 +37,7 @@ export const bookManagerIntegration = {
         // The API can't filter by date, so filter here.
         return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
-} satisfies EventIntegration<BookManagerOptions>;
+});
 
 async function postForm(path: string, fields: Record<string, string>): Promise<any> {
     const formData = new FormData();

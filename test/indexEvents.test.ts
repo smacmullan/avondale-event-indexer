@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { z } from 'zod';
 import {
     buildCollectionReport,
     collectEvents,
@@ -71,6 +72,8 @@ test('collection isolates source failures and includes warnings in reports and s
     const registry = new IntegrationRegistry();
     registry.register({
         type: 'testCollection',
+        docs: { title: 'Test Collection', summary: 'Test collection integration' },
+        optionsSchema: z.object({}),
         parseOptions: () => ({}),
         async fetchEvents({ source }): Promise<EventRecord[]> {
             if (source.name === 'Broken Source')

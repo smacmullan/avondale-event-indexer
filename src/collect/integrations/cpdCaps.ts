@@ -1,23 +1,34 @@
 import { z } from 'zod';
-import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import type { EventRecord } from '../../definitions.ts';
 import PuppeteerQueueManager from '../../utils/puppeteerQueueManager.ts';
 import { standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const DEFAULT_CALENDAR_URL = 'https://www.chicagopolice.org/community-engagement-calendar/';
 
 const optionsSchema = z.object({
-    /** Police beat ids to include, e.g. [1411, 1412] */
-    beatIds: z.array(z.number().int().positive()).min(1),
-    /** Public calendar page. Loaded first to get browser cookies, and used as each event's url. */
-    eventPageUrl: z.url().default(DEFAULT_CALENDAR_URL),
+    beatIds: z.array(z.number().int().positive()).min(1)
+        .describe('Police beat IDs to include, e.g. [1411, 1412]'),
+    eventPageUrl: z.url().default(DEFAULT_CALENDAR_URL)
+        .describe("Public calendar page, loaded first for browser cookies and used as each event's url"),
 }).strict();
 
 export type CpdCapsOptions = z.infer<typeof optionsSchema>;
 
-export const cpdCapsIntegration = {
+export const cpdCapsIntegration = defineIntegration({
     type: 'cpdCaps',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'CPD CAPS',
+        summary: 'Chicago Police Department CAPS events for selected police beats.',
+        details:
+            'Loads the public CPD calendar page in a browser to obtain its cookies, then requests calendar events ' +
+            'and keeps CAPS events that list one of the configured police beat IDs. eventPageUrl defaults to the ' +
+            'CPD community engagement calendar and can be overridden if needed.',
+        example: { beatIds: [1411, 1412] },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         // The API filters by date range, so no post-filtering is needed.
@@ -38,7 +49,7 @@ export const cpdCapsIntegration = {
 
         return standardizeAll(relevantEvents, event => standardizeCpdCapsEvent(event, options.eventPageUrl), source.name);
     },
-} satisfies EventIntegration<CpdCapsOptions>;
+});
 
 async function getEventsFromApi(apiUrl: string, cookiePageUrl: string): Promise<any> {
     const queueManager = PuppeteerQueueManager.getInstance();

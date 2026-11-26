@@ -1,23 +1,33 @@
 import ical from 'ical';
 import { z } from 'zod';
 import { decodeHtmlEntities } from '../../utils/html.ts';
-import type { EventRecord, EventIntegration, EventSource } from '../../definitions.ts';
+import type { EventRecord, EventSource } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchText, standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** iCal feed URL (https://..., not webcal://) */
-    url: z.url(),
-    /** Link to the organization's public events page, used as each event's url */
-    eventPageUrl: z.url().optional(),
+    url: z.url()
+        .describe('iCal feed URL (https://..., not webcal://)'),
+    eventPageUrl: z.url().optional()
+        .describe("Link to the organization's public events page, used as each event's url"),
 }).strict();
 
 export type WebCalOptions = z.infer<typeof optionsSchema>;
 
-export const webCalIntegration = {
+export const webCalIntegration = defineIntegration({
     type: 'webCal',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'WebCal',
+        summary: 'Events from an iCal (.ics) feed hosted at a URL.',
+        details:
+            'The feed is downloaded and its events parsed. Use the https:// form of the URL, not webcal://. ' +
+            "iCal events don't carry individual page links, so set eventPageUrl if you want events to link somewhere.",
+        example: { url: 'https://example.com/calendar.ics', eventPageUrl: 'https://example.com/events' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         const data = await fetchText(options.url);
@@ -35,7 +45,7 @@ export const webCalIntegration = {
         // iCal feeds can't be filtered by date, so filter here.
         return events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
-} satisfies EventIntegration<WebCalOptions>;
+});
 
 function standardizeWebCalEvent(event: any, source: EventSource, options: WebCalOptions): EventRecord {
     const organizerName = typeof event.organizer === 'string'

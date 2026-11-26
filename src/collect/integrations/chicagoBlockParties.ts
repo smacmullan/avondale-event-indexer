@@ -1,18 +1,28 @@
 import { z } from 'zod';
-import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import type { EventRecord } from '../../definitions.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** Chicago community area id on the City of Chicago data portal. Digits only: it goes into a query. */
-    neighborhoodId: z.string().regex(/^\d+$/, 'must be a numeric community area id'),
+    neighborhoodId: z.string().regex(/^\d+$/, 'must be a numeric community area id')
+        .describe('Chicago community area ID on the City of Chicago data portal; digits only'),
 }).strict();
 
 export type ChicagoBlockPartiesOptions = z.infer<typeof optionsSchema>;
 
-export const chicagoBlockPartiesIntegration = {
+export const chicagoBlockPartiesIntegration = defineIntegration({
     type: 'chicagoBlockParties',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Chicago Block Parties',
+        summary: 'Block parties in a selected Chicago community area.',
+        details:
+            'Queries the City of Chicago open data portal for block party permits in the selected community area. ' +
+            'Use the numeric community area ID used by the portal; this is not a neighborhood name.',
+        example: { neighborhoodId: '24' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         // The query filters by date range, so no post-filtering is needed.
@@ -22,7 +32,7 @@ export const chicagoBlockPartiesIntegration = {
 
         return standardizeAll(data, standardizeBlockPartyEvent, source.name);
     },
-} satisfies EventIntegration<ChicagoBlockPartiesOptions>;
+});
 
 /** Generate API URL to get block party data from City of Chicago's Open Data Portal's Transportation Department Permits. */
 function generateApiUrl(options: ChicagoBlockPartiesOptions, endSearchDate: Date): string {

@@ -1,15 +1,24 @@
 import { google } from 'googleapis';
 import { z } from 'zod';
-import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import type { EventRecord } from '../../definitions.ts';
 import { getEventSeriesStartDates } from '../../utils/eventSeries.ts';
 import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
-process.loadEnvFile();
+import { defineIntegration } from '../defineIntegration.ts';
+
+// Load .env if there is one. A missing file is fine (e.g. when just running --help or --describe);
+// a malformed or unreadable one still throws.
+try {
+    process.loadEnvFile();
+} catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
+        throw error;
+}
 
 const optionsSchema = z.object({
-    /** Google Sheet ID (the long string in the sheet's URL). Must be readable with the API key. */
-    sheetId: z.string().min(1),
-    /** Name of the tab holding the form responses */
-    tab: z.string().min(1).default('Event Submissions'),
+    sheetId: z.string().min(1)
+        .describe("Google Sheet ID (the long string in the sheet's URL). Must be public or readable with the API key"),
+    tab: z.string().min(1).default('Event Submissions')
+        .describe('Name of the tab holding the form responses'),
 }).strict();
 
 export type GoogleSheetOptions = z.infer<typeof optionsSchema>;
@@ -47,10 +56,22 @@ const COL = {
     repeatStop: 14,
 } as const;
 
-export const googleSheetIntegration = {
+export const googleSheetIntegration = defineIntegration({
     type: 'googleSheet',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Google Sheet',
+        summary: 'Events from a public Google Sheet filled in by a submission form.',
+        details:
+            'A catch-all for organizations that have no way to host their event data: they submit events through ' +
+            'a Google Form, and the form responses land in the sheet. The sheet must follow a very specific format: ' +
+            'the columns must be in exactly the order of the form responses (see the comment above COL in ' +
+            'src/collect/integrations/googleSheet.ts). The sheet must be readable with your API key.',
+        requiresEnv: ['GOOGLE_API_KEY'],
+        example: { sheetId: 'YOUR_SHEET_ID', tab: 'Event Submissions' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         const apiKey = process.env.GOOGLE_API_KEY;
@@ -84,7 +105,7 @@ export const googleSheetIntegration = {
         // The Sheets API can't filter by date, so filter here.
         return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
-} satisfies EventIntegration<GoogleSheetOptions>;
+});
 
 /** Parses "M/D/YYYY" or "M/D/YYYY H:MM:SS". Returns YYYY-MM-DD for all-day/date-only, else an ISO datetime. */
 function sheetStringToDate(dateStr: string | undefined, allDay = false): string | undefined {

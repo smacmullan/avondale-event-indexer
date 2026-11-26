@@ -1,12 +1,13 @@
 import { z } from 'zod';
-import type { EventRecord, EventIntegration, EventSource } from '../../definitions.ts';
+import type { EventRecord, EventSource } from '../../definitions.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** Restaurant website base URL, e.g. https://www.chiefoneillspub.com (trailing slash is removed) */
-    url: z.url().transform(value => value.replace(/\/+$/, '')),
-    /** Id of the calendar section on the restaurant's events page (from the site's GraphQL traffic) */
-    sectionId: z.number().int().positive(),
+    url: z.url().transform(value => value.replace(/\/+$/, ''))
+        .describe('Restaurant website base URL; trailing slashes are removed'),
+    sectionId: z.number().int().positive()
+        .describe("ID of the calendar section on the restaurant's events page, found in its GraphQL traffic"),
 }).strict();
 
 export type PopMenuOptions = z.infer<typeof optionsSchema>;
@@ -14,10 +15,19 @@ export type PopMenuOptions = z.infer<typeof optionsSchema>;
 // Persisted GraphQL query id used by the PopMenu client
 const OPERATION_ID = "PopmenuClient/84a8c72179c517e7d584420f7a69a194";
 
-export const popMenuIntegration = {
+export const popMenuIntegration = defineIntegration({
     type: 'popMenu',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Popmenu',
+        summary: 'Non-recurring events from a restaurant using Popmenu.',
+        details:
+            'Provide the restaurant website base URL and its calendar section ID. Find the section ID by inspecting ' +
+            'the site GraphQL requests in browser developer tools. Recurring calendar entries are currently excluded.',
+        example: { url: 'https://example-restaurant.com', sectionId: 1 },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         // The query filters by date range, so no post-filtering is needed.
@@ -58,7 +68,7 @@ export const popMenuIntegration = {
             source.name,
         );
     },
-} satisfies EventIntegration<PopMenuOptions>;
+});
 
 function standardizePopMenuEvent(event: any, source: EventSource, options: PopMenuOptions): EventRecord {
     return {

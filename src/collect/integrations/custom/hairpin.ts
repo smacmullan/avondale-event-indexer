@@ -9,6 +9,13 @@ import { withTransform } from '../../integrationHelpers.ts';
 export const hairpinIntegration = withTransform(
     jsonLdIntegration,
     'hairpin',
+    {
+        title: 'Hairpin Arts Center',
+        summary: 'JSON-LD events with generic Hairpin titles reconstructed from their event URLs.',
+        details:
+            'Some Hairpin Arts Center event pages use the generic title "Explore Our". This source-specific ' +
+            'transform derives a readable event name from the event URL slug when possible.',
+    },
     events => events.map(cleanupEventName),
 );
 

@@ -1,20 +1,31 @@
 import { z } from 'zod';
-import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import type { EventRecord } from '../../definitions.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** Bare hostname of the Plot site, e.g. "sleeping-village.com" */
-    host: z.string().min(1),
+    host: z.string().min(1)
+        .describe('Bare hostname of the Plot site, e.g. "sleeping-village.com"'),
 }).strict();
 
 export type PlotOptions = z.infer<typeof optionsSchema>;
 
 const MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
 
-export const plotIntegration = {
+export const plotIntegration = defineIntegration({
     type: 'plot',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Plot',
+        summary: 'Events from the Plot listings API for a venue website.',
+        details:
+            'Provide the venue site hostname without a protocol or path. To confirm that a site uses Plot, inspect ' +
+            'its event page network requests in browser developer tools; the API is lighter and faster than ' +
+            'rendering the site. Plot sites may also expose JSON-LD for use with the jsonLd integration.',
+        example: { host: 'example.com' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         // The API filters by date range, so no post-filtering is needed.
@@ -30,7 +41,7 @@ export const plotIntegration = {
         // Events with unparseable dates are skipped and summarized in one log line
         return standardizeAll(plotEvents, standardizePlotEvent, source.name);
     },
-} satisfies EventIntegration<PlotOptions>;
+});
 
 function standardizePlotEvent(event: any): EventRecord {
     const { title, dateTime, venue, permalink } = event;

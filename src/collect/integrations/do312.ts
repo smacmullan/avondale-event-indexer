@@ -1,19 +1,29 @@
 import { z } from 'zod';
-import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import type { EventRecord } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** Venue JSON feed, e.g. https://do312.com/venues/late-bar.json */
-    url: z.url(),
+    url: z.url()
+        .describe('Venue JSON feed URL'),
 }).strict();
 
 export type Do312Options = z.infer<typeof optionsSchema>;
 
-export const do312Integration = {
+export const do312Integration = defineIntegration({
     type: 'do312',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Do312',
+        summary: 'Events from a Do312 venue JSON feed.',
+        details:
+            'Provide the venue JSON feed URL. Find it by opening the venue page and inspecting fetch requests in ' +
+            'browser developer tools; the feed commonly has the form do312.com/venues/<venue>.json.',
+        example: { url: 'https://do312.com/venues/example-venue.json' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         const data = await fetchJson(options.url);
@@ -26,7 +36,7 @@ export const do312Integration = {
         // The feed can't filter by date, so filter here.
         return events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
-} satisfies EventIntegration<Do312Options>;
+});
 
 function standardizeDo312Event(event: any): EventRecord {
     return {

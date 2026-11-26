@@ -28,6 +28,7 @@ type IntegrationRunner = (source: EventSource, endSearchDate: Date, timeoutMs: n
  */
 export class IntegrationRegistry {
     private runners = new Map<string, IntegrationRunner>();
+    private integrations = new Map<string, EventIntegration<any>>();
     private defaultTimeoutMs: number;
 
     constructor({ defaultTimeoutMs = DEFAULT_TIMEOUT_MS }: RegistryOptions = {}) {
@@ -42,8 +43,14 @@ export class IntegrationRegistry {
         for (const method of ['parseOptions', 'fetchEvents'] as const)
             if (typeof integration[method] !== 'function')
                 throw new Error(`Integration "${type}" is missing ${method}()`);
+        if (!integration.docs?.title?.trim() || !integration.docs?.summary?.trim())
+            throw new Error(`Integration "${type}" is missing docs.title/docs.summary`);
+        if (typeof integration.optionsSchema?.parse !== 'function')
+            throw new Error(`Integration "${type}" is missing optionsSchema`);
         if (this.runners.has(type))
             throw new Error(`Integration "${type}" is already registered`);
+
+        this.integrations.set(type, integration);
 
         // Closing over the typed integration erases TOptions for storage while keeping
         // parseOptions -> fetchEvents type-checked inside runIntegration.
@@ -59,6 +66,15 @@ export class IntegrationRegistry {
         return [...this.runners.keys()];
     }
 
+    get(type: string): EventIntegration<any> | undefined {
+        return this.integrations.get(type);
+    }
+
+    /** All registered integrations, in registration order. */
+    list(): EventIntegration<any>[] {
+        return [...this.integrations.values()];
+    }
+
     /** Collect one source. Never rejects. */
     async collectEventsFromSource(source: EventSource, endSearchDate: Date): Promise<SourceResult> {
         const run = this.runners.get(source.integrationType);
@@ -67,7 +83,7 @@ export class IntegrationRegistry {
                 source,
                 status: 'failed',
                 events: [],
-                error: `No integration registered for "${source.integrationType}"`,
+                error: `No integration registered for "${source.integrationType}" (see: node index.ts --list-integrations)`,
                 warnings: [],
                 durationMs: 0,
             };
@@ -97,7 +113,7 @@ async function runIntegration<TOptions>(
     try {
         options = integration.parseOptions(source.options ?? {});
     } catch (error) {
-        return finish({ status: 'failed', events: [], error: `Invalid options: ${formatError(error)}` });
+        return finish({ status: 'failed', events: [], error: `Invalid options: ${formatError(error)} (see: node index.ts --describe ${integration.type})` });
     }
 
     const controller = new AbortController();

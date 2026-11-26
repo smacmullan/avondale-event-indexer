@@ -9,6 +9,13 @@ import { withTransform } from '../../integrationHelpers.ts';
 export const consignmentLoungeIntegration = withTransform(
     googleCalendarIntegration,
     'consignmentLounge',
+    {
+        title: 'Consignment Lounge',
+        summary: 'Google Calendar events with times recovered from event titles.',
+        details:
+            'Calendar entries may be date-only and include their hours in the title. This transform parses supported ' +
+            'time ranges, updates the event dates, removes the parsed time from the title, and removes the original end date.',
+    },
     events => events.map(cleanupEventTime),
 );
 

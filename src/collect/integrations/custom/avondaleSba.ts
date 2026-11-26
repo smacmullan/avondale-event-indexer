@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import type * as cheerio from 'cheerio';
-import type { EventRecord, EventIntegration } from '../../../definitions.ts';
+import type { EventRecord } from '../../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../../../utils/time.ts';
 import { fetchText, standardizeAll } from '../../integrationHelpers.ts';
 import { extractJsonLdEventsFromHtml, standardizeJsonLdEvent } from '../jsonLd.ts';
+import { defineIntegration } from '../../defineIntegration.ts';
  
 /**
  *  The Avondale Small Business Association (ASBA) website hosts a dynamic sitemap.xml file that lists all the event webpages.
@@ -13,18 +14,28 @@ import { extractJsonLdEventsFromHtml, standardizeJsonLdEvent } from '../jsonLd.t
  */
  
 const optionsSchema = z.object({
-    /** Site base URL, e.g. https://avondalesba.org (trailing slash is removed). Its sitemap.xml lists the event pages. */
-    url: z.url().transform(value => value.replace(/\/+$/, '')),
+    url: z.url().transform(value => value.replace(/\/+$/, ''))
+        .describe('Site base URL; trailing slashes are removed and sitemap.xml is read from this URL'),
 }).strict();
  
 export type AvondaleSbaOptions = z.infer<typeof optionsSchema>;
  
 const AVONDALE_EVENTS_LINK_SELECTOR = 'a[href*="events.avondalechicago.org"]';
  
-export const avondaleSbaIntegration = {
+export const avondaleSbaIntegration = defineIntegration({
     type: 'avondaleSba',
  
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Avondale Small Business Association',
+        summary: 'Avondale SBA event pages discovered from its sitemap.',
+        details:
+            'The integration reads the sitemap and is designed to parse JSON-LD events under /events/, skipping ' +
+            'pages that link to Avondale Events to avoid re-indexing them. Event indexing is currently disabled ' +
+            'in the fetch function while rate-limiting is addressed, so this source currently returns no events.',
+        example: { url: 'https://example.com' },
+    },
+
+    options: optionsSchema,
  
     async fetchEvents({ source, options, endSearchDate }) {
         // Failing to load the sitemap throws (whole integration fails).
@@ -45,7 +56,7 @@ export const avondaleSbaIntegration = {
         // Pages can't be filtered by date up front, so filter here.
         return events.filter((event: EventRecord) => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
-} satisfies EventIntegration<AvondaleSbaOptions>;
+});
  
 /** Pages that link to the Avondale Events site are skipped to avoid indexing events twice. */
 function linksToAvondaleEvents(page: cheerio.CheerioAPI): boolean {

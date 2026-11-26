@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+
 /** Where an event came from. */
 export type EventOrigin = {
     name: string;
@@ -36,7 +38,7 @@ export type EventSource = {
      *  - 3: direct source w/o event detail pages (e.g., a Google calendar)
      */
     dedupeRank?: number;
-    /** Max time this source may take, in ms. Overrides the registry's default (120s). Raise it for slow, browser-rendered sources. */
+    /** Max time this source may take, in ms. Overrides the registry's default (60s). Raise it for slow, browser-rendered sources. */
     timeoutMs?: number;
     /** Integration-specific; validated by the integration's parseOptions */
     options?: unknown;
@@ -51,8 +53,30 @@ export interface IntegrationContext<TOptions> {
     signal: AbortSignal;
 }
 
+/**
+ * Shown by `node index.ts --list-integrations` and `--describe <type>`.
+ * Per-option docs are not written here: they come from `.describe()` on the options schema.
+ */
+export type IntegrationDocs = {
+    /** Human-readable name, e.g. "Google Calendar". */
+    title: string;
+    /** One line, shown in the integration list. */
+    summary: string;
+    /** Plain text: how it works, how to find the right option values, caveats. */
+    details?: string;
+    /** Environment variables the integration needs, e.g. API keys. */
+    requiresEnv?: string[];
+    /** For source-specific wrappers: the `type` of the integration they build on. Set automatically by withTransform(). */
+    basedOn?: string;
+    /** Example `options` object for sources.json. Must pass the options schema. */
+    example?: Record<string, unknown>;
+};
+
 export interface EventIntegration<TOptions = unknown> {
     readonly type: string;
+    readonly docs: IntegrationDocs;
+    /** Single source of truth for the options: parseOptions validates with it and --describe documents from it. */
+    readonly optionsSchema: z.ZodType<TOptions>;
     /** Validate and normalize raw config. Throw on invalid input. */
     parseOptions(raw: unknown): TOptions;
     /** May throw; the registry handles failures. */

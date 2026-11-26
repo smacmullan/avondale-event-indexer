@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { z } from 'zod';
 import type { EventIntegration, EventSource } from '../src/definitions.ts';
 import { IntegrationRegistry } from '../src/collect/integrationRegistry.ts';
 
@@ -9,11 +10,16 @@ const source = (integrationType: string, extra: Partial<EventSource> = {}): Even
     ...extra,
 });
 
+const testDocs = (title: string) => ({ title, summary: `${title} test integration` });
+const emptyOptions = z.object({});
+
 test('IntegrationRegistry reports invalid options without calling the integration', async () => {
     let fetchCalled = false;
     const registry = new IntegrationRegistry();
     registry.register({
         type: 'invalidOptions',
+        docs: testDocs('Invalid Options'),
+        optionsSchema: emptyOptions,
         parseOptions() {
             throw new Error('bad configuration');
         },
@@ -27,7 +33,7 @@ test('IntegrationRegistry reports invalid options without calling the integratio
 
     assert.equal(result.status, 'failed');
     assert.deepEqual(result.events, []);
-    assert.equal(result.error, 'Invalid options: bad configuration');
+    assert.equal(result.error, 'Invalid options: bad configuration (see: node index.ts --describe invalidOptions)');
     assert.equal(fetchCalled, false);
 });
 
@@ -35,6 +41,8 @@ test('IntegrationRegistry converts integration exceptions into failed source res
     const registry = new IntegrationRegistry();
     const integration: EventIntegration<Record<string, never>> = {
         type: 'throws',
+        docs: testDocs('Throws'),
+        optionsSchema: emptyOptions,
         parseOptions: () => ({}),
         async fetchEvents() {
             throw new Error('upstream unavailable');
@@ -54,6 +62,8 @@ test('IntegrationRegistry aborts timed-out integrations and reports the timeout'
     const registry = new IntegrationRegistry();
     const integration: EventIntegration<Record<string, never>> = {
         type: 'slow',
+        docs: testDocs('Slow'),
+        optionsSchema: emptyOptions,
         parseOptions: () => ({}),
         fetchEvents({ signal }) {
             receivedSignal = signal;

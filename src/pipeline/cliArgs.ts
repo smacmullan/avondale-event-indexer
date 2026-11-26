@@ -9,8 +9,9 @@ export class UsageError extends Error {
     }
 }
 
+/** Run the pipeline. */
 export type RunArgs = {
-    help: boolean;
+    mode: 'run';
     from: Stage;
     to: Stage;
     /** Set when --export is used. */
@@ -20,8 +21,14 @@ export type RunArgs = {
     weeksOut?: number;
 };
 
+export type CliArgs =
+    | { mode: 'help' }
+    | { mode: 'list' }
+    | { mode: 'describe'; type: string }
+    | RunArgs;
+
 /** Parses the command line. Throws UsageError for anything invalid. */
-export function parseRunArgs(argv: string[]): RunArgs {
+export function parseCliArgs(argv: string[]): CliArgs {
     let values;
     try {
         ({ values } = parseArgs({
@@ -34,11 +41,40 @@ export function parseRunArgs(argv: string[]): RunArgs {
                 export: { type: 'string', multiple: true },
                 weeks: { type: 'string' },
                 verbose: { type: 'boolean', default: false },
+                'list-integrations': { type: 'boolean', default: false },
+                describe: { type: 'string' },
                 help: { type: 'boolean', short: 'h', default: false },
             },
         }));
     } catch (error) {
         throw new UsageError(error instanceof Error ? error.message : String(error));
+    }
+
+    if (values.help)
+        return { mode: 'help' };
+
+    // Informational modes: they don't run the pipeline, so pipeline flags don't make sense with them.
+    const wantsList = values['list-integrations'];
+    const wantsDescribe = values.describe !== undefined;
+    if (wantsList && wantsDescribe)
+        throw new UsageError('--list-integrations and --describe cannot be used together');
+    if (wantsList || wantsDescribe) {
+        const pipelineFlags = [
+            values.from !== undefined && '--from',
+            values.to !== undefined && '--to',
+            values.export !== undefined && '--export',
+            values.weeks !== undefined && '--weeks',
+            values.verbose && '--verbose',
+        ].filter(Boolean);
+        if (pipelineFlags.length)
+            throw new UsageError(`${wantsList ? '--list-integrations' : '--describe'} cannot be combined with ${pipelineFlags.join(', ')}`);
+        if (wantsList)
+            return { mode: 'list' };
+
+        const type = values.describe!.trim();
+        if (!type)
+            throw new UsageError('--describe needs an integration type (see --list-integrations)');
+        return { mode: 'describe', type };
     }
 
     const exporters = values.export?.flatMap(value => value.split(',')).map(name => name.trim()).filter(Boolean);
@@ -63,7 +99,7 @@ export function parseRunArgs(argv: string[]): RunArgs {
             throw new UsageError('--weeks only applies when the collect stage runs');
     }
 
-    return { help: values.help, from, to, exporters, verbose: values.verbose, weeksOut };
+    return { mode: 'run', from, to, exporters, verbose: values.verbose, weeksOut };
 }
 
 function parseStage(flag: string, value: string | undefined): Stage | undefined {
@@ -86,14 +122,18 @@ Runs the pipeline: collect -> process -> export. Collecting writes output/rawEve
 processing writes output/events.json, and each later stage can be re-run from those files.
 
 Options:
-  --from <stage>     First stage to run: collect (default), process, export.
-                     Earlier stages are skipped and their output file is read instead.
-  --to <stage>       Last stage to run (default: export)
-  --export <names>   Run only these exporters (comma-separated or repeated), including
-                     on-demand ones. Implies --from export unless --from is given.
-  --weeks <n>        How many weeks out to collect (default: 2). Collect stage only.
-  --verbose          List every removed and changed event in the processing summary
-  -h, --help         Show this help
+  --from <stage>        First stage to run: collect (default), process, export.
+                        Earlier stages are skipped and their output file is read instead.
+  --to <stage>          Last stage to run (default: export)
+  --export <names>      Run only these exporters (comma-separated or repeated), including
+                        on-demand ones. Implies --from export unless --from is given.
+  --weeks <n>           How many weeks out to collect (default: 2). Collect stage only.
+  --verbose             List every removed and changed event in the processing summary
+  -h, --help            Show this help
+
+Integrations (for writing config/sources.json; these don't run the pipeline):
+  --list-integrations   List the available integration types
+  --describe <type>     Show an integration's details, options, and an example entry
 
 Exporters:
 ${exporterList}
@@ -104,5 +144,6 @@ Examples:
   node index.ts --from export            Re-export events.json
   node index.ts --export postImages      Render images from your edited eventList.md
   node index.ts --to collect             Just collect and save rawEvents.json
+  node index.ts --describe jsonLd        Show how to configure a jsonLd source
 `;
 }

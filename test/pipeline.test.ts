@@ -8,11 +8,17 @@ import { eventStep, type ProcessStep } from '../src/process/processStep.ts';
 import { ProcessStepError } from '../src/process/processEvents.ts';
 import type { Exporter } from '../src/export/exporter.ts';
 import { runIndexerPipeline, type IndexerPipeline } from '../src/pipeline/runIndexerPipeline.ts';
-import { parseRunArgs, UsageError } from '../src/pipeline/cliArgs.ts';
+import { parseCliArgs, UsageError } from '../src/pipeline/cliArgs.ts';
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'pipe-'));
 const quiet = { log: () => {} };
 const names = (file: string): string[] => JSON.parse(fs.readFileSync(file, 'utf-8')).map((e: EventRecord) => e.name);
+const parseRun = (argv: string[]) => {
+    const args = parseCliArgs(argv);
+    if (args.mode !== 'run')
+        throw new Error(`Expected run arguments, got ${args.mode}`);
+    return args;
+};
 
 const collected = (): EventRecord[] => [
     { name: 'Open Mic @ Bar', startDate: new Date('2030-01-02T20:00:00Z') as any },   // a Date object, like the webCal integration returns
@@ -127,18 +133,32 @@ test('--from after --to is an error', async () => {
     await assert.rejects(() => runIndexerPipeline(pipeline(), { outputDir: tmp(), from: 'export', to: 'process', ...quiet }), /Cannot run from "export" to "process"/);
 });
 
-test('parseRunArgs defaults and --export implying --from export', () => {
-    assert.deepEqual(parseRunArgs([]), { help: false, from: 'collect', to: 'export', exporters: undefined, verbose: false, weeksOut: undefined });
-    assert.equal(parseRunArgs(['--export', 'postImages']).from, 'export');
-    assert.equal(parseRunArgs(['--export', 'a,b', '--export', 'c']).exporters!.join(), 'a,b,c');
-    assert.equal(parseRunArgs(['--export', 'x', '--from', 'process']).from, 'process');
-    assert.deepEqual(parseRunArgs(['--from', 'process', '--to', 'process', '--verbose']).verbose, true);
-    assert.equal(parseRunArgs(['--weeks', '4']).weeksOut, 4);
-    assert.equal(parseRunArgs(['-h']).help, true);
+test('parseCliArgs defaults and --export implying --from export', () => {
+    assert.deepEqual(parseCliArgs([]), {
+        mode: 'run',
+        from: 'collect',
+        to: 'export',
+        exporters: undefined,
+        verbose: false,
+        weeksOut: undefined,
+    });
+    assert.equal(parseRun(['--export', 'postImages']).from, 'export');
+    assert.deepEqual(parseRun(['--export', 'a,b', '--export', 'c']).exporters, ['a', 'b', 'c']);
+    assert.equal(parseRun(['--export', 'x', '--from', 'process']).from, 'process');
+    assert.deepEqual(parseRun(['--from', 'process', '--to', 'process', '--verbose']), {
+        mode: 'run',
+        from: 'process',
+        to: 'process',
+        exporters: undefined,
+        verbose: true,
+        weeksOut: undefined,
+    });
+    assert.equal(parseRun(['--weeks', '4']).weeksOut, 4);
+    assert.deepEqual(parseCliArgs(['-h']), { mode: 'help' });
 });
 
-test('parseRunArgs rejects invalid combinations with a UsageError', () => {
-    const bad = (args: string[], message: RegExp) => assert.throws(() => parseRunArgs(args), (e: unknown) => e instanceof UsageError && message.test(e.message));
+test('parseCliArgs rejects invalid combinations with a UsageError', () => {
+    const bad = (args: string[], message: RegExp) => assert.throws(() => parseCliArgs(args), (e: unknown) => e instanceof UsageError && message.test(e.message));
     bad(['--from', 'nope'], /--from must be one of: collect, process, export/);
     bad(['--from', 'export', '--to', 'process'], /--from export comes after --to process/);
     bad(['--export', 'x', '--to', 'process'], /--export needs the export stage/);

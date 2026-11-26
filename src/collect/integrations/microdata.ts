@@ -1,20 +1,30 @@
 import * as cheerio from 'cheerio';
 import { z } from 'zod';
-import type { EventRecord, EventIntegration } from '../../definitions.ts';
+import type { EventRecord } from '../../definitions.ts';
 import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 import { fetchText } from '../integrationHelpers.ts';
+import { defineIntegration } from '../defineIntegration.ts';
 
 const optionsSchema = z.object({
-    /** Events listing page containing schema.org microdata */
-    url: z.url(),
+    url: z.url()
+        .describe('Events listing page containing schema.org microdata'),
 }).strict();
 
 export type MicrodataOptions = z.infer<typeof optionsSchema>;
 
-export const microdataIntegration = {
+export const microdataIntegration = defineIntegration({
     type: 'microdata',
 
-    parseOptions: raw => optionsSchema.parse(raw),
+    docs: {
+        title: 'Microdata',
+        summary: 'Events from a listing page that uses schema.org microdata.',
+        details:
+            'Reads event entries from a listing page containing schema.org microdata. The page must use the ' +
+            'event-list structure supported by this integration; each entry needs a name and start date.',
+        example: { url: 'https://example.com/events' },
+    },
+
+    options: optionsSchema,
 
     async fetchEvents({ source, options, endSearchDate }) {
         const html = await fetchText(options.url);
@@ -53,4 +63,4 @@ export const microdataIntegration = {
         // The page can't filter by date, so filter here.
         return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
     },
-} satisfies EventIntegration<MicrodataOptions>;
+});
