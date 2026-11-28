@@ -1,7 +1,7 @@
 {
-  "name": "avondale-event-indexer",
-  "version": "1.0.0",
-  "description": "Consolidate event data from Avondale businesses and community groups.",
+  "name": "local-event-indexer",
+  "version": "0.1.0",
+  "description": "Consolidate event data from local businesses and community groups.",
   "type": "module",
   "main": "index.ts",
   "scripts": {

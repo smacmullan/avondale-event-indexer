@@ -1,5 +1,5 @@
-# Avondale Event Indexer
-The Avondale Event Indexer is a small application that generates a neighborhood event list from local organizations/businesses' public event data.
+# Local Event Indexer
+Local Event Indexer is a small application that generates a community event list from local organizations/businesses' public event data.
 
 # Setup
 1. Install [Node.js](https://nodejs.org)
@@ -19,13 +19,20 @@ npm install
 npm run start
 ```
 
-See below for additional configuration and scripts.
+# Overview
+Running the indexer goes through a three-stage data processing pipeline:
+
+1. **collect events** - fetch events from event data sources in `config/sources.json`. Saves `output/rawEvents.json`.
+2. **process events** - run the raw events through processing steps (remove duplicates, closed events, filtered events, redundant place names, etc.). Saves `output/processedEvents.json`.
+3. **export events** - turn `output/processedEvents.json` into various outputs such as a simplified JSON list, markdown event list, newsletter HTML, and social media post images.
+
+Each stage can be run on its own, reading the previous stage's saved file instead of re-collecting. For example, re-running from `process` is useful for testing changes to the cleanup steps without re-fetching every source. Run `node index.ts --help` for all options, the list of exporters, and examples.
 
 
 # Configuration
 ## Environment Setup
-If you are using any Google integrations, you will need to setup an API key. 
-1. Get an API key from Google. Your API key will need to **Google Calendar API** and **Google Sheets API** enabled.
+If you are using any Google integrations, you will need to set up an API key.
+1. Get an API key from Google. Your API key needs the **Google Calendar API** and **Google Sheets API** enabled.
 > Refer to [Google's Calendar API Quickstart Guide](https://developers.google.com/calendar/api/quickstart/js). You will need to create a cloud project and enable the APIs. You can skip the OAuth and "create credentials" section. Follow the steps in the "Create an API key" section.
 2. Create a file named `.env` in the project root directory.
 3. Copy the following into the `.env` file and replace YOUR_API_KEY with your API key.
@@ -35,96 +42,66 @@ GOOGLE_API_KEY=YOUR_API_KEY
 ```
 
 ## Source List
-`config/sources.json` contains a list of sources to fetch events from. This file comes pre-loaded with local organizations' sources, but you can add more as you see fit. For each source, you must specify a name, the type of integration, and the integration options.
+`config/sources.json` contains a list of sources to fetch events from. Each source looks like this:
+
+```json
+{
+  "name": "Example Venue",
+  "integrationType": "jsonLd",
+  "options": { "url": "https://example.com/events" }
+}
+```
+Options vary per integration.
 
 ## Filter List
-`config/filterList.json` contains a list of events to remove from the event list during post-processing. This can be used to get rid common duplicates or non-events so you don't have to repeatedly delete them by hand.
-
-# Scripts
-`index.js` in the project root directory is the main script that will fetch event data and compile it into a list. The other scripts are located in the `scripts` directory and allow for finer control of the process or extend the functionality.
-
-This project uses TypeScript. Run all scripts using `npx tsx /path/to/script.tx`.
+`config/filterList.json` contains a list of events to remove from the event list during processing. This can be used to get rid of common duplicates or non-events so you don't have to repeatedly delete them by hand.
 
 
-## index.js
-Run this script to fetch event data and produce an event list. This will save two files to `/output`:
-* `rawEvents.json` - the raw event data
-* `events.json` - cleaned event data. Redundant place names and closed events are removed.
-* `eventList.md` - a markdown file that lists the events by day.
+# Integrations
+An *integration* allows the indexer to fetch events from a specific kind of source (a Google Calendar, an iCal feed, a website with JSON-LD, and so on).
 
-> Running index.js is equivalent to running **getEventData.js** followed by **generateEventList.js**.
+List the available integrations:
+```bash
+node index.ts --list-integrations
+```
 
-## getEventData.js
-Use this script to re-fetch event data. The event data is saved to `rawEvents.json`.
+Show how to configure one (what it does, its options):
+```bash
+node index.ts --describe jsonLd
+```
 
-## generateEventList.js
-Use this script to take existing event data in `rawEvents.json` and re-create the `eventList.md` event list and cleaned `events.json` file. This is useful for testing formatting changes without needing to re-fetch the data.
+# Writing an integration
+Integrations live in `src/collect/integrations/`. Define one with `defineIntegration`, which takes a [zod](https://zod.dev) schema for the options. The schema is the single source of truth: it validates the options, types `options` inside `fetchEvents`, and generates the option docs shown by `--describe` from each field's `.describe()` text.
 
-## exportNewsletterHtml.js
-Use this script to convert the `events.json` file into HTML that can be copied and pasted into a newsletter. This script automatically trims the event data to be Monday through Sunday for the upcoming week.
+```ts
+import { z } from 'zod';
+import { defineIntegration } from '../defineIntegration.ts';
+import { fetchJson, standardizeAll } from '../integrationHelpers.ts';
+import { isEventUpcomingAndBeforeDate } from '../../utils/time.ts';
 
-## exportPostPhotos.js
-Use this script to convert the event list in `eventList.md` into a series of images that can be used for an Instagram post. These images are saved to `/output/posts/`.
-> You can manually make edits to `eventList.md` before running this script.
+export const exampleIntegration = defineIntegration({
+    type: 'example',
 
+    docs: {
+        title: 'Example',
+        summary: 'One line shown in --list-integrations.',
+        details: 'How it works and how to find the right option values.',   // optional
+        requiresEnv: ['EXAMPLE_API_KEY'],                                    // optional
+        example: { apiUrl: 'https://example.com/api/events' },               // optional, must pass the schema
+    },
 
-# Event List/Calendar Integrations
-This library supports indexing event data from the following sources: 
-* JSON LD
-* Google Calendar
-* Google Sheet
-* Plot
-* Do312
-* WebCal
-* Microdata
-* Events Calendar Co
-* Wix
-* Book Manager
+    options: z.object({
+        apiUrl: z.url().describe('URL of the events API'),
+    }).strict(),
 
-JSON LD is the preferred method for an organization/business to host their event data. JSON LD is a web standard that will be indexed by other event search tools (e.g., Google Search). 
+    async fetchEvents({ source, options, endSearchDate }) {
+        const rows = await fetchJson(options.apiUrl);
+        const events = standardizeAll(rows, row => ({ name: row.title, startDate: row.start }), source.name);
+        return events.filter(event => isEventUpcomingAndBeforeDate(event, endSearchDate));
+    },
+});
+```
 
-## JSON LD
-[JSON LD](https://json-ld.org/) embeds standardized data in a webpage's HTML content so that it can easily be picked up by search engines. A webpage with JSON LD will have an HTML script tag of type "application/ld+json" present. Each event should have its own webpage when using JSON LD.
+Then add it to the `builtIns` list in `src/collect/defaultRegistry.ts`, or call `registerIntegration()` yourself.
 
-To use this API, provide a URL for a central event page. The interface works as follows:
-1. Load the central event page and grab all the hyperlinked URLs present on the page.
-2. De-duplicate the list of URLs to obtain a unique list.
-3. Go to each URL and check for JSON LD event data. If present, grab the data.
-
-This interface also has several associated options that you can enable by specifying values in the organization object:
-* **jsonLdLinkBlockList** (string array) - use to specify a list of URLs to avoid checking (sometimes sites will link to a different view of the same event list and you end up retrieving duplicate events).
-* **jsonLdEventLinkMustInclude** (string) - by default, the interface only grabs links with the same base URL of the homepage or that include "event" in the link text. This overrides the default behavior and only grabs links that include the specified text.
-* **jsonLdHubPageRequiresRendering** (boolean) - by default (false), the interface grabs static HTML served at the provided API URL ("hub page"). Some webpages have their event links dynamically loaded, which requires the page to render to grab the links. This is more resource intensive.
-* **jsonLdEventPagesRequiresRendering** (boolean) - by default (false), the interface grabs static HTML served at each event link. Some webpages load ther JSON LD data dynamically, which requires the webpage to render. This is more resource intensive.
-
-> **Note:** At the moment, there is no rate limiting for rendering pages. If multiple pages are rendered concurrently it can place significant load on your system.
-
-
-## Google Calendar
-This interface allows you to get event data from any public Google calendar. For the API, provide the email address associated with the calendar.
-
-## Google Sheet
-This interface allows you to get event data from public Google sheets following a **very specific** format. See [this form](https://forms.gle/qKwAdmRgGEDykowE8) and [this sheet](https://docs.google.com/spreadsheets/d/16ZGiL23lypQqvbW0YNXXi4ylJq5vzvPvE6a78aPemlI/edit?usp=sharing) as an example. The columns must be in the exact same order.
-
-This interface is meant as a catch-all for organizations that don't have a means to host their event data. Organizations can fill out the Google form to submit events and they'll get picked up via this interface.
-
-## Plot
-Plot is a website management platform geared towards event venues. You can find the API by going to a Plot website event page and looking at the API calls in the browser development tools. Plot does implement JSON LD, so you can use that as an alternative (the API is less resource intensive and a little faster).
-
-## Do312
-Do312 hosts its event data in JSON files located at "https://do312.com/venues/VENUE-NAME.json". Find the venue page, look at the fetch requests using browser developer tools, and then use the URL for this JSON file for the API field.
-
-## WebCal
-WebCal is an iCal file hosted at a URL. Provide the webcal URL (use https://, *not* webcal://) for the API. This interface downloads the iCal and parses the events from it.
-
-## Microdata
-Microdata is a less common structured data format. For the API, provide the webpage with the microdata and the interface will grab all the event data present on the page.
-
-## Events Calendar Co
-This is a plugin used by some businesses for their calendar display. Use browser developer tools to find the API that the webpage is fetching its data from.
-
-## Wix
-This grabs data from a business' Wix website using the Wix calendar widget.
-
-## Book Manager
-This is a tool used by some bookstores. For the `api` value, you need to provide the bookstore's "webstore name". You can find this by opening a browser developer console and looking at POST requests made from the bookstore's events page. `webstore_name` will be in the payload for the **getSettings** request.
+For a source that needs a small tweak on top of an existing integration, use `withTransform(base, type, docs, transform)` (see `src/collect/integrations/custom/`). It reuses the base integration's options and is listed under "Source-specific" integrations.
