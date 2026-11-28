@@ -21,7 +21,7 @@ test('JSON-LD normalization decodes text and falls back to the source name', () 
                 location: { name: 'Studio &amp; Gallery' },
                 url: 'https://example.test/event',
             },
-            { name: 'Fallback Source', integrationType: 'jsonLd' },
+            { name: 'Fallback Source', displayName: 'Shared Organizer', integrationType: 'jsonLd' },
         ),
         {
             name: 'Arts & Crafts',
@@ -37,6 +37,13 @@ test('JSON-LD normalization decodes text and falls back to the source name', () 
             { name: 'Fallback Source', integrationType: 'jsonLd' },
         ).organizer?.name,
         'Fallback Source',
+    );
+    assert.equal(
+        standardizeJsonLdEvent(
+            { name: 'No Location', startDate: '2026-06-01' },
+            { name: 'Fallback Source', displayName: 'Shared Organizer', integrationType: 'jsonLd' },
+        ).organizer?.name,
+        'Shared Organizer',
     );
 });
 
@@ -136,6 +143,7 @@ test('Google Calendar integration maps timed and all-day events using current op
     const endSearchDate = upcomingDate(7);
     const source: EventSource = {
         name: 'Calendar Source',
+        displayName: 'Shared Organizer',
         integrationType: 'googleCalendar',
         options: {
             calendarId: 'calendar@example.test',
@@ -164,14 +172,14 @@ test('Google Calendar integration maps timed and all-day events using current op
         name: 'Evening Workshop',
         startDate: timedStart,
         endDate: timedEnd,
-        organizer: { name: 'Calendar Source @ 123 Main St' },
+        organizer: { name: 'Shared Organizer @ 123 Main St' },
         url: 'https://example.test/calendar',
     });
     assert.deepEqual(events[1], {
         name: 'All-day Market',
         startDate: '2026-06-01',
         endDate: '2026-06-02',
-        organizer: { name: 'Calendar Source' },
+        organizer: { name: 'Shared Organizer' },
         url: 'https://example.test/calendar',
     });
 });
@@ -203,6 +211,7 @@ END:VCALENDAR`;
     t.mock.method(globalThis, 'fetch', async () => new Response(calendar));
     const source: EventSource = {
         name: 'Calendar Source',
+        displayName: 'Shared Organizer',
         integrationType: 'webCal',
         options: {
             url: 'https://example.test/events.ics',
@@ -219,7 +228,7 @@ END:VCALENDAR`;
     const eventWithOrganizerValue = events.find(event => event.name === 'Named Organizer Event');
 
     assert.equal(events.length, 2);
-    assert.equal(eventWithoutOrganizerName?.organizer?.name, 'Calendar Source');
+    assert.equal(eventWithoutOrganizerName?.organizer?.name, 'Shared Organizer');
     assert.equal(eventWithOrganizerValue?.organizer?.name, 'mailto:host@example.test');
     assert.equal(eventWithoutOrganizerName?.url, 'https://example.test/calendar');
 });

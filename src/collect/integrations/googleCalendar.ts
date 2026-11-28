@@ -55,7 +55,7 @@ export const googleCalendarIntegration = defineIntegration({
         });
 
         const events = response.data.items || [];
-        return events.map(event => standardizeGoogleEvent(event, source.name, options));
+        return events.map(event => standardizeGoogleEvent(event, source.displayName || source.name, options));
     },
 });
 

@@ -28,6 +28,8 @@ export type EventSchedule = {
 
 export type EventSource = {
     name: string;
+    /** Optional override to use for the event organizer name. Note that using this is integration-dependent. */
+    displayName?: string;
     integrationType: string;
     /** Used for picking event to keep from duplicates. Lower value is preferred. If not specified, assume 0 (highest).
      * 

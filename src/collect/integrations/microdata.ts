@@ -54,7 +54,7 @@ export const microdataIntegration = defineIntegration({
                 name: eventName,
                 startDate: eventDate + "Z", // "Z" forces dates to be treated as UTC
                 organizer: {
-                    name: eventLocation || source.name,
+                    name: eventLocation || source.displayName || source.name,
                 },
                 url: fullEventLink,
             });

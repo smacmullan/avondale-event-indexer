@@ -76,7 +76,7 @@ function standardizePopMenuEvent(event: any, source: EventSource, options: PopMe
         startDate: getISODateString(event.startAt, event.startTime),
         endDate: getISODateString(event.endAt || event.startAt, event.endTime),
         organizer: {
-            name: source.name,
+            name: source.displayName || source.name,
         },
         url: `${options.url}/events/${event.slug}`,
     };

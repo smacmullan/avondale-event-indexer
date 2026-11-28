@@ -168,7 +168,8 @@
         }
     },
     {
-        "name": "Oracle + Alchemy",
+        "name": "Oracle + Alchemy Events",
+        "displayName": "Oracle + Alchemy",
         "integrationType": "offeringTree",
         "options": {
             "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
@@ -176,7 +177,8 @@
         }
     },
     {
-        "name": "Oracle + Alchemy",
+        "name": "Oracle + Alchemy Coaching",
+        "displayName": "Oracle + Alchemy",
         "integrationType": "offeringTree",
         "options": {
             "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
@@ -184,15 +186,8 @@
         }
     },
     {
-        "name": "Oracle + Alchemy",
-        "integrationType": "offeringTree",
-        "options": {
-            "eventPageUrl": "https://www.oracleandalchemy.com/schedule",
-            "url": "https://api.offeringtree.com/events/by_count?instructor_id=aca2601b-4fcb-4b85-b4d4-691197f3b149&category_id=96dc7008-eaa6-46dc-b219-1529fb59517f"
-        }
-    },
-    {
-        "name": "Oracle + Alchemy",
+        "name": "Oracle + Alchemy Courses",
+        "displayName": "Oracle + Alchemy",
         "integrationType": "offeringTree",
         "options": {
             "eventPageUrl": "https://www.oracleandalchemy.com/schedule",

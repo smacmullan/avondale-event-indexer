@@ -79,7 +79,7 @@ function standardizeBookManagerEvent(event: any, source: EventSource, baseUrl?: 
         startDate: convertBookManagerDateToIsoString(event.date, event.start_time),
         endDate: event.end_time ? convertBookManagerDateToIsoString(event.date, event.end_time) : undefined,
         organizer: {
-            name: source.name,
+            name: source.displayName || source.name,
         },
         url: baseUrl ? `${baseUrl}/events/${event.id}` : undefined,
     };

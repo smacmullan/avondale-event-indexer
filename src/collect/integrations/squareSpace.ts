@@ -79,7 +79,7 @@ function standardizeSquareSpaceEvents(event: any, source: EventSource, options: 
         startDate: new Date(event.startDate).toISOString(),
         endDate: new Date(event.endDate).toISOString(),
         organizer: {
-            name: source.name,
+            name: source.displayName || source.name,
         },
         url: options.eventPageUrl || undefined,
     };

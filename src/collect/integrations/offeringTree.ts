@@ -56,7 +56,7 @@ function standardizeOfferingTreeEvent(event: any, source: EventSource, options: 
         startDate: event.attributes.start_date_time,
         endDate: event.attributes.end_date_time,
         organizer: {
-            name: source.name,
+            name: source.displayName || source.name,
         },
         url: options.eventPageUrl ? `${options.eventPageUrl}/${event.id}` : undefined,
     };

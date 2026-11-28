@@ -46,6 +46,7 @@ export async function collectEventsBySource(
     sources: EventSource[],
     { registry = defaultRegistry, weeksOut = 2 }: CollectOptions = {},
 ): Promise<SourceResult[]> {
+    assertUniqueSourceNames(sources);
 
     // console logging of indexing progress
     console.log("Getting event data...");
@@ -64,6 +65,15 @@ export async function collectEventsBySource(
 
     tracker.clear(); // clear logging messages
     return results;
+}
+
+function assertUniqueSourceNames(sources: EventSource[]): void {
+    const seen = new Set<string>();
+    for (const { name } of sources) {
+        if (seen.has(name))
+            throw new Error(`Two event sources are named "${name}". Event source names must be unique.`);
+        seen.add(name);
+    }
 }
 
 /** Collect every source, print a summary of what went wrong, and return all the events. */

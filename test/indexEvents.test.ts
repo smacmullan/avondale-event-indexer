@@ -64,6 +64,25 @@ END:VCALENDAR`);
     assert.equal(fetchMock.mock.callCount(), 2);
 });
 
+test('collection rejects duplicate source names before fetching', async t => {
+    const fetchMock = t.mock.method(globalThis, 'fetch', async () => {
+        throw new Error('fetch should not be called for duplicate source names');
+    });
+    t.mock.method(console, 'log', () => {});
+    t.mock.method(process.stdout, 'write', () => true);
+
+    const sources: EventSource[] = [
+        { name: 'Duplicate Source', integrationType: 'webCal', options: { url: 'https://example.test/first.ics' } },
+        { name: 'Duplicate Source', integrationType: 'webCal', options: { url: 'https://example.test/second.ics' } },
+    ];
+
+    await assert.rejects(
+        () => collectEvents(sources),
+        /Two event sources are named "Duplicate Source". Event source names must be unique\./,
+    );
+    assert.equal(fetchMock.mock.callCount(), 0);
+});
+
 test('collection isolates source failures and includes warnings in reports and summaries', async t => {
     const logs: string[] = [];
     t.mock.method(console, 'log', (message: string) => { logs.push(message); });

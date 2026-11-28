@@ -57,7 +57,7 @@ function standardizeWebCalEvent(event: any, source: EventSource, options: WebCal
         startDate: event.start,
         endDate: event.end,
         organizer: {
-            name: organizerName ? decodeHtmlEntities(organizerName) : source.name,
+            name: organizerName ? decodeHtmlEntities(organizerName) : (source.displayName || source.name),
         },
         url: options.eventPageUrl,
     };

@@ -239,7 +239,7 @@ export function standardizeJsonLdEvent(event: any, source: EventSource): EventRe
         startDate,
         endDate,
         organizer: {
-            name: decodeHtmlEntities(location?.name) || source.name,
+            name: decodeHtmlEntities(location?.name) || source.displayName || source.name,
         },
         url,
     };

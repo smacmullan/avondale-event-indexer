@@ -64,7 +64,7 @@ function standardizeElfSightEvent(event: any, source: EventSource, options: ElfS
         name: event.name,
         startDate,
         organizer: {
-            name: source.name,
+            name: source.displayName || source.name,
         },
         url: options.eventPageUrl || undefined,
     };
